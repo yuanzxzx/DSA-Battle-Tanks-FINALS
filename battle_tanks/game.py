@@ -40,9 +40,10 @@ class Game:
     def __init__(self,
                  addr:Union[Tuple[str,int], None],
                  screen:pg.Surface,
-                 player_name="John"):
+                 player_name="John",
+                 tank_color:int=0):
 
-        self.network = NetworkComponent(addr,player_name) if addr is not None else None
+        self.network = NetworkComponent(addr, player_name, tank_color) if addr is not None else None
         self._player_number = self.network.player_number if addr is not None else 0
         self.positions = {}
 
@@ -67,7 +68,7 @@ class Game:
         else:
             position = (0,0)
 
-        self.player = Player(position, self._player_number, cannon_type=type_guns.get("MEDIUM"))
+        self.player = Player(position, self._player_number, cannon_type=type_guns.get("MEDIUM"), tank_color=tank_color)
         self.players[self._player_number] = self.player
         self.camera = CameraComponent(self.tile.WIDTH, self.tile.HEIGHT, (self.WIDTH, self.HEIGHT))
         self.move = MovementComponent(self.network, self.player)
@@ -115,7 +116,8 @@ class Game:
                 if (recv.get("status") == Struct.NEW_PLAYER or
                         recv.get("status") == Struct.OLD_PLAYER):
                     position = recv["position"]
-                    player = Player((recv["x"],recv["y"]), position, cannon_type = type_guns.get("BASIC"))
+                    tank_color = recv.get("tank_color", 0)
+                    player = Player((recv["x"],recv["y"]), position, cannon_type = type_guns.get("BASIC"), tank_color=tank_color)
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
                 #zmon
@@ -140,7 +142,8 @@ class Game:
                         player.damage = recv["damage_indicator"]
 
                     else:
-                        player = Player((recv["x"], recv["y"]), position, cannon_type=type_guns.get("BASIC"))
+                        tank_color = recv.get("tank_color", 0)
+                        player = Player((recv["x"], recv["y"]), position, cannon_type=type_guns.get("BASIC"), tank_color=tank_color)
                         player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                         self.players[position] = player
 
@@ -168,7 +171,7 @@ class Game:
         for _,player in self.players.items():
             # Dibujar el tanque
             tank_rect = self.camera.apply(player)
-            tank_cover(player.player_number, tank_rect, self.SCREEN, angle=player.angle,
+            tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
                        angle_cannon=player.angle_cannon)
             
             # Dibujar el nombre del jugador

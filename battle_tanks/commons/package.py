@@ -16,7 +16,7 @@ class Struct:
     """
         Class for packing and unpacking data
     """
-    SIZE_PLAYER = 11 + 1 # ADD 1 FOR SIZE
+    SIZE_PLAYER = 12 + 1 # ADD 1 FOR SIZE
     MAX_PLAYERS = 2
     BUFFER_SIZE_PLAYER = 100
     BUFFER_SIZE_EVENT_RESPONSE = 11 # ADD 1 FOR SIZE
@@ -81,7 +81,7 @@ class Struct:
     def unpack_player(data: bytes):
         """ :param data: bytes. a player is 10 bytes but size is 1 byte"""
         data = data[1:]
-        return struct.unpack('BBhhhhb', data)
+        return struct.unpack('BBhhhhbB', data)
 
 
     @staticmethod
@@ -136,12 +136,14 @@ class Struct:
         angle = angle % 360
         angle_cannon = angle_cannon % 360
 
+        tank_color = player_data.get("tank_color", 0)
+
         player_data["angle"] = angle
         player_data["angle_cannon"] = angle_cannon
 
         size_data = Struct.pack_single_data(Struct.SIZE_PLAYER)
-        size_data += struct.pack('BBhhhhb', status if status is not None else Struct.UPDATE_PLAYER,
-                           current, int(pos_x), int(pos_y), angle, angle_cannon, damage_indicator)
+        size_data += struct.pack('BBhhhhbB', status if status is not None else Struct.UPDATE_PLAYER,
+                           current, int(pos_x), int(pos_y), int(angle), int(angle_cannon), int(damage_indicator), int(tank_color))
 
         return size_data
 

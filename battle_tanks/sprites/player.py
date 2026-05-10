@@ -22,9 +22,10 @@ class Player(Cannon):
     TELESCOPIC_SIGH = pg.image.load(os.path.join(os.path.abspath("."), "assets/images/telescopic_sight.png"))
      
 
-    def __init__(self, position: tuple, number: int, cannon_type: dict):
+    def __init__(self, position: tuple, number: int, cannon_type: dict, tank_color: int = 0):
         super().__init__(position, cannon_type)
         self.player_number = number
+        self.tank_color = tank_color
         self.name = f"Player {number}"  # Nombre por defecto
         self.damage = 0
         self.fire = False
