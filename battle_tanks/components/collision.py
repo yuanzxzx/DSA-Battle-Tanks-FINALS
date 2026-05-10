@@ -207,3 +207,41 @@ class Collision:
                     dy /= distance
                     player["x"] -= dx * separation * 0.125
                     player["y"] -= dy  * separation * 0.125
+
+    @classmethod
+    def check_bullet_at_point(cls, x: float, y: float):
+        ##SERVER SIDE: Checks if a single X/Y point touches a brick 
+        for brick in list(cls.bricks):
+            if brick.rect.collidepoint(x, y):
+                from battle_tanks.commons.package import Struct 
+                return Struct.pack_tile({
+                    "type": Struct.BROKE_BRICK,
+                    "x": brick.rect.x,
+                    "y": brick.rect.y,
+                    "w": brick.rect.w,
+                    "h": brick.rect.h
+                })
+        return None
+
+    @classmethod
+    def get_laser_intersections(cls, player_data: dict, laser_range: int):
+        ##CLIENT SIDE: Returns a list of bricks currently hit by the laser.
+        start_pos = cls.calculate_bullet_position(player_data, 0)
+        end_pos = cls.calculate_bullet_position(player_data, laser_range)
+        
+        hit_objects = {"bricks": []}
+        steps = 20  # Increase steps for better precision with a long laser
+        
+        for step in range(steps + 1):
+            t = step / steps
+            point = (
+                start_pos[0] + t * (end_pos[0] - start_pos[0]),
+                start_pos[1] + t * (end_pos[1] - start_pos[1])
+            )
+
+            for brick in cls.bricks:
+                if brick.rect.collidepoint(point):
+                    if brick not in hit_objects["bricks"]:
+                        hit_objects["bricks"].append(brick)
+        
+        return hit_objects
