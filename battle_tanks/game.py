@@ -10,6 +10,7 @@ from battle_tanks.components.movement import MovementComponent
 from battle_tanks.components.tile_map import TileMap
 from battle_tanks.components.camera import CameraComponent
 from battle_tanks.sprites import Player, Brick
+from battle_tanks.sprites.elements import Bullet
 from battle_tanks.commons.municion import CannonType
 from battle_tanks.commons.tank_surface import tank_cover
 from battle_tanks.components.network import NetworkComponent
@@ -92,7 +93,16 @@ class Game:
         for key,player in self.players.items():
             if player.fire:
                 SHOT.play()
+                
+                import math
+                radian_angle = math.radians(player.angle_cannon)
+                start_x = player.rect.centerx + math.sin(radian_angle) * -30
+                start_y = player.rect.centery + math.cos(radian_angle) * -30
+                self._bullets.add(Bullet(start_x, start_y, player.angle_cannon))
+                
                 player.fire = False
+
+        self._bullets.update()
 
         """ SEND MOVES BYTES """
         self.move.keys()
@@ -109,8 +119,12 @@ class Game:
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
 
-                elif recv.get("status") == Struct.UPDATE_PLAYER:
+                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT):
                     position = recv["position"]
+                    
+                    if recv.get("status") == Struct.PLAYER_SHOT:
+                        self.camera.shake()
+                        SOUND_BOOM.play()
 
                     if self.players.get(position):
                         player = self.players[position]
@@ -136,10 +150,13 @@ class Game:
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
                         SOUND_BOOM.play()
+                        self.camera.shake()
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
+                    self.camera.shake()
+
 
         self.camera.update(self.player)
 
@@ -186,6 +203,9 @@ class Game:
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))
+            
+        for bullet in self._bullets:
+            self.SCREEN.blit(bullet.image, self.camera.apply(bullet))
 
         telescopic_pos = Collision.calculate_bullet_position(self.player.telescopic_sight(), 100)
         telescopic_rect = self.camera.apply_rect(pg.rect.Rect(telescopic_pos[0],telescopic_pos[1],20,20))
