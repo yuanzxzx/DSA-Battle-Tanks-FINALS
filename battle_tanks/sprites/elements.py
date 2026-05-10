@@ -1,5 +1,5 @@
 import pygame as pg
-import math
+import math #zmon
 from battle_tanks import ROUTE
 
 
@@ -38,7 +38,7 @@ class Block(SpriteBasic):
     """ Class representing a Block object """
     def __init__(self,x_pos,y_pos,width,height):
         super().__init__(x_pos,y_pos,width,height)
-
+#zmon
 class Bullet(pg.sprite.Sprite):
     def __init__(self, x, y, angle_cannon, max_distance=300):
         super().__init__()
@@ -58,3 +58,4 @@ class Bullet(pg.sprite.Sprite):
         self.distance_traveled += math.sqrt(self.vx**2 + self.vy**2)
         if self.distance_traveled >= self.max_distance:
             self.kill()
+#zmon
