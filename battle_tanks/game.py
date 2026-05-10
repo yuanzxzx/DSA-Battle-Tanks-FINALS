@@ -10,7 +10,7 @@ from battle_tanks.components.movement import MovementComponent
 from battle_tanks.components.tile_map import TileMap
 from battle_tanks.components.camera import CameraComponent
 from battle_tanks.sprites import Player, Brick
-from battle_tanks.sprites.elements import Bullet
+from battle_tanks.sprites.elements import Bullet #zmon
 from battle_tanks.commons.municion import CannonType
 from battle_tanks.commons.tank_surface import tank_cover
 from battle_tanks.components.network import NetworkComponent
@@ -118,14 +118,14 @@ class Game:
                     player = Player((recv["x"],recv["y"]), position, cannon_type = type_guns.get("BASIC"))
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
-
+                #zmon
                 elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT):
                     position = recv["position"]
-                    
+                #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
                         self.camera.shake()
                         SOUND_BOOM.play()
-
+                #zmon
                     if self.players.get(position):
                         player = self.players[position]
 
@@ -150,12 +150,12 @@ class Game:
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
                         SOUND_BOOM.play()
-                        self.camera.shake()
+                        self.camera.shake() #zmon
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
-                    self.camera.shake()
+                    self.camera.shake() #zmon
 
 
         self.camera.update(self.player)
@@ -203,10 +203,10 @@ class Game:
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))
-            
+            #zmon
         for bullet in self._bullets:
             self.SCREEN.blit(bullet.image, self.camera.apply(bullet))
-
+            #zmon
         telescopic_pos = Collision.calculate_bullet_position(self.player.telescopic_sight(), 100)
         telescopic_rect = self.camera.apply_rect(pg.rect.Rect(telescopic_pos[0],telescopic_pos[1],20,20))
 
@@ -225,4 +225,4 @@ class Game:
     def __str__(self):
         return (f"\n\nPlayer Number: {self._player_number} "
                 f"\nPlayer Name: {self.network.name} "
-                f"\nStatus: {'Multiplayer' if self.network.addr else 'Single'}\n\n")
+                f"\nStatus: {'Multiplayer' if self.network.addr else 'Single'}\n\n") #zmon
