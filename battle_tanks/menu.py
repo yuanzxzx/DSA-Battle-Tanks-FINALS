@@ -250,3 +250,6 @@ class Menu:
         tank_cover(0,(150,300),self.main_surface,scale=(200,200),angle=0,angle_cannon=0)
         tank_cover(1,(450,300),self.main_surface,scale=(200,200),angle=360,angle_cannon=180)
 
+
+
+# 67
