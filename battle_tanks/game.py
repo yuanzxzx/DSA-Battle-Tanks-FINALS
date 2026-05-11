@@ -4,6 +4,7 @@
 import sys
 from typing import Tuple, Dict, Union, List
 import pygame as pg
+import math
 
 from battle_tanks.commons.package import Struct, Collision
 from battle_tanks.components.movement import MovementComponent
@@ -95,7 +96,7 @@ class Game:
             if player.fire:
                 SHOT.play()
                 
-                import math
+                
                 radian_angle = math.radians(player.angle_cannon)
                 start_x = player.rect.centerx + math.sin(radian_angle) * -30
                 start_y = player.rect.centery + math.cos(radian_angle) * -30
