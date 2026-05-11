@@ -79,7 +79,7 @@ class Game:
         self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
         self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
         
-        self.FOG_COLOR = (255, 255, 255, 255) # Pure white fog
+        self.FOG_COLOR = (80, 80, 80, 255) # Gray fog
         self.fov_mask.fill(self.FOG_COLOR) # Start fully opaque
         
         # Create a gradient mask to subtract alpha
@@ -93,9 +93,6 @@ class Game:
             subtract_alpha = int(255 * math.cos(normalized * math.pi / 2))
             pg.draw.circle(sub_mask, (0, 0, 0, subtract_alpha), (self.FOV_RADIUS, self.FOV_RADIUS), radius, 2)
             
-        # Ensure the very center is perfectly clear
-        pg.draw.circle(sub_mask, (0, 0, 0, 255), (self.FOV_RADIUS, self.FOV_RADIUS), int(self.FOV_RADIUS * 0.2))
-        
         # Subtract the gradient mask from the opaque fov_mask
         self.fov_mask.blit(sub_mask, (0, 0), special_flags=pg.BLEND_RGBA_SUB)
 # kca
