@@ -18,11 +18,11 @@ class MovementComponent:
         key = pg.key.get_pressed()
         actions = []
 
-        if key[pg.K_d]:
+        if key[pg.K_a]: #Inverting movement
             action = Struct.RIGHT_EVENT_PLAYER
             actions.append(action)
 
-        elif key[pg.K_a]:
+        elif key[pg.K_d]: #Inverting movement
             action = Struct.LEFT_EVENT_PLAYER
             actions.append(action)
 
@@ -34,11 +34,11 @@ class MovementComponent:
             action = Struct.DOWN_EVENT_PLAYER
             actions.append(action)
 
-        if key[pg.K_i]:
+        if key[pg.K_p]: #Inverting turret's movement
             action = Struct.LEFT_ANGLE_EVENT_PLAYER
             actions.append(action)
 
-        elif key[pg.K_p]:
+        elif key[pg.K_i]: #Inverting turret's movement
             action = Struct.RIGHT_ANGLE_EVENT_PLAYER
             actions.append(action)
 
