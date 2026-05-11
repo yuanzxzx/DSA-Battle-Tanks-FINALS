@@ -75,21 +75,23 @@ class Game:
         self.move = MovementComponent(self.network, self.player)
 
         # Fog of War configuration
-        self.FOV_RADIUS = 250
+        self.FOV_RADIUS = 350
         self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
         self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
-        self.fov_mask.fill((0, 0, 0, 255)) # Start fully opaque
+        
+        self.FOG_COLOR = (80, 80, 80, 255) # Gray fog
+        self.fov_mask.fill(self.FOG_COLOR) # Start fully opaque
         
         # Create a gradient mask to subtract alpha
         sub_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
         sub_mask.fill((0, 0, 0, 0)) # Transparent by default (subtract nothing outside FOV)
         
         # Draw concentric rings to form a smooth gradient of alpha subtraction
-        for radius in range(self.FOV_RADIUS, 0, -2):
+        for radius in range(self.FOV_RADIUS, 0, -1):
             normalized = radius / self.FOV_RADIUS
             # Closer to center (normalized -> 0), subtract more alpha (up to 255)
             subtract_alpha = int(255 * ((1.0 - normalized) ** 1.5))
-            pg.draw.circle(sub_mask, (0, 0, 0, subtract_alpha), (self.FOV_RADIUS, self.FOV_RADIUS), radius, 2)
+            pg.draw.circle(sub_mask, (0, 0, 0, subtract_alpha), (self.FOV_RADIUS, self.FOV_RADIUS), radius, 3)
             
         # Ensure the very center is perfectly clear
         pg.draw.circle(sub_mask, (0, 0, 0, 255), (self.FOV_RADIUS, self.FOV_RADIUS), int(self.FOV_RADIUS * 0.15))
@@ -244,7 +246,7 @@ class Game:
             #zmon
 
         # Render Fog of War over map and players
-        self.fog.fill((0, 0, 0, 255))
+        self.fog.fill(self.FOG_COLOR)
         player_screen_rect = self.camera.apply(self.player)
         mask_x = player_screen_rect.centerx - self.FOV_RADIUS
         mask_y = player_screen_rect.centery - self.FOV_RADIUS
