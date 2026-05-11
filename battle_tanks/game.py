@@ -120,7 +120,7 @@ class Game:
             if player.fire:
                 SHOT.play()
                 
-                import math
+                
                 radian_angle = math.radians(player.angle_cannon)
                 start_x = player.rect.centerx + math.sin(radian_angle) * -30
                 start_y = player.rect.centery + math.cos(radian_angle) * -30
@@ -178,12 +178,12 @@ class Game:
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
                         SOUND_BOOM.play()
-                        self.camera.shake() #zmon
+              #          self.camera.shake() #zmon
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
-                    self.camera.shake() #zmon
+                  #  self.camera.shake() #zmon
 
 
         self.camera.update(self.player)
