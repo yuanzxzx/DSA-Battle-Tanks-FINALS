@@ -132,7 +132,7 @@ def main():
                 game.close()
             elif event.type == pg.KEYUP:
                 key = event.dict.get("key")
-                if key == pg.K_o and menu.select_option is not None:
+                if key == pg.K_o:
                     if game.player.check_available_bullets():
                         game.player.fire = True
                         game.network.send_move_tcp(Struct.FIRE_EVENT_PLAYER)

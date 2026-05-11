@@ -149,7 +149,7 @@ class Game:
                     position = recv["position"]
                 #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
-                        self.camera.shake()
+                #        self.camera.shake()
                         SOUND_BOOM.play()
                 #zmon
                     if self.players.get(position):
@@ -250,7 +250,7 @@ class Game:
         self.fog.blit(self.fov_mask, (mask_x, mask_y), special_flags=pg.BLEND_RGBA_MIN)
         self.SCREEN.blit(self.fog, (0, 0))
 #kca   
-        telescopic_pos = Collision.calculate_bullet_position(self.player.telescopic_sight(), 100)
+        telescopic_pos = Collision.calculate_bullet_position(self.player.telescopic_sight(), 130)
         telescopic_rect = self.camera.apply_rect(pg.rect.Rect(telescopic_pos[0],telescopic_pos[1],20,20))
 
         self.SCREEN.blit(Player.TELESCOPIC_SIGH, telescopic_rect)

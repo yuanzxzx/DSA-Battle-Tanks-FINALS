@@ -40,7 +40,7 @@ class Block(SpriteBasic):
         super().__init__(x_pos,y_pos,width,height)
 #zmon
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, x, y, angle_cannon, max_distance=300):
+    def __init__(self, x, y, angle_cannon, max_distance=130):
         super().__init__()
         self.image = pg.Surface((6, 6), pg.SRCALPHA)
         pg.draw.circle(self.image, (255, 255, 0), (3, 3), 3) # Yellow bullet
