@@ -18,6 +18,7 @@ class Menu:
 
 
     def __init__(self, main_surface: pg.Surface):
+        self.select_option = None
         self.main_surface = main_surface
         self.clock = pg.time.Clock()
         self.angle = 0
