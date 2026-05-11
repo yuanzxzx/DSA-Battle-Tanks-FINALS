@@ -4,6 +4,7 @@
 import sys
 from typing import Tuple, Dict, Union, List
 import pygame as pg
+import math
 
 from battle_tanks.commons.package import Struct, Collision
 from battle_tanks.components.movement import MovementComponent
@@ -72,6 +73,30 @@ class Game:
         self.players[self._player_number] = self.player
         self.camera = CameraComponent(self.tile.WIDTH, self.tile.HEIGHT, (self.WIDTH, self.HEIGHT))
         self.move = MovementComponent(self.network, self.player)
+
+        # Fog of War configuration
+        self.FOV_RADIUS = 250
+        self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
+        self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
+        self.fov_mask.fill((0, 0, 0, 255)) # Start fully opaque
+        
+        # Create a gradient mask to subtract alpha
+        sub_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
+        sub_mask.fill((0, 0, 0, 0)) # Transparent by default (subtract nothing outside FOV)
+        
+        # Draw concentric rings to form a smooth gradient of alpha subtraction
+        for radius in range(self.FOV_RADIUS, 0, -2):
+            normalized = radius / self.FOV_RADIUS
+            # Closer to center (normalized -> 0), subtract more alpha (up to 255)
+            subtract_alpha = int(255 * ((1.0 - normalized) ** 1.5))
+            pg.draw.circle(sub_mask, (0, 0, 0, subtract_alpha), (self.FOV_RADIUS, self.FOV_RADIUS), radius, 2)
+            
+        # Ensure the very center is perfectly clear
+        pg.draw.circle(sub_mask, (0, 0, 0, 255), (self.FOV_RADIUS, self.FOV_RADIUS), int(self.FOV_RADIUS * 0.15))
+        
+        # Subtract the gradient mask from the opaque fov_mask
+        self.fov_mask.blit(sub_mask, (0, 0), special_flags=pg.BLEND_RGBA_SUB)
+
         self.load()
 
 
@@ -169,6 +194,13 @@ class Game:
         self.SCREEN.blit(self.tile_image,self.camera.apply_rect(self.tile_rect))
 
         for _,player in self.players.items():
+            # Fog of War visibility check
+            if player != self.player:
+                dist = math.hypot(self.player.rect.centerx - player.rect.centerx, 
+                                  self.player.rect.centery - player.rect.centery)
+                if dist > self.FOV_RADIUS:
+                    continue
+
             # Dibujar el tanque
             tank_rect = self.camera.apply(player)
             tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
@@ -210,6 +242,15 @@ class Game:
         for bullet in self._bullets:
             self.SCREEN.blit(bullet.image, self.camera.apply(bullet))
             #zmon
+
+        # Render Fog of War over map and players
+        self.fog.fill((0, 0, 0, 255))
+        player_screen_rect = self.camera.apply(self.player)
+        mask_x = player_screen_rect.centerx - self.FOV_RADIUS
+        mask_y = player_screen_rect.centery - self.FOV_RADIUS
+        self.fog.blit(self.fov_mask, (mask_x, mask_y), special_flags=pg.BLEND_RGBA_MIN)
+        self.SCREEN.blit(self.fog, (0, 0))
+
         telescopic_pos = Collision.calculate_bullet_position(self.player.telescopic_sight(), 100)
         telescopic_rect = self.camera.apply_rect(pg.rect.Rect(telescopic_pos[0],telescopic_pos[1],20,20))
 
