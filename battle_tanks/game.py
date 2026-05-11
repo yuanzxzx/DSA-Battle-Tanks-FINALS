@@ -75,7 +75,7 @@ class Game:
         self.move = MovementComponent(self.network, self.player)
 # kca
         # Fog of War configuration
-        self.FOV_RADIUS = 350
+        self.FOV_RADIUS = 300
         self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
         self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
         
