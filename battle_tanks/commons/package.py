@@ -43,6 +43,9 @@ class Struct:
     """ FIRE EVENTS"""
     FIRE_EVENT_PLAYER: bytes = b'\x11'
 
+    LASER_ON_EVENT = b"L_ON"
+    LASER_OFF_EVENT = b"L_OFF" ##Laser event thing for server and client
+
     UPDATE_PLAYER: int = 1
     NEW_PLAYER: int = 2
     OLD_PLAYER: int = 3
