@@ -153,12 +153,12 @@ class Game:
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
                         SOUND_BOOM.play()
-                        self.camera.shake() #zmon
+              #          self.camera.shake() #zmon
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
-                    self.camera.shake() #zmon
+                  #  self.camera.shake() #zmon
 
 
         self.camera.update(self.player)
