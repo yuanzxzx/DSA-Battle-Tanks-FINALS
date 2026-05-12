@@ -177,10 +177,7 @@ class Server:
                     elif data == Struct.FIRE_EVENT_PLAYER:
                         encoded_message = Struct.pack_event(player_data)
                         if encoded_message:
-                            if len(encoded_message) == Struct.SIZE_PLAYER:
-                                q.put(Struct.OK_MESSAGE + encoded_message)
-                            else:
-                                q.put(encoded_message)
+                            q.put(encoded_message)
 
                     elif data == Struct.LASER_ON_EVENT:
                         player_data["laser_active"] = True
@@ -376,8 +373,8 @@ class Server:
 
                 elif isinstance(data,bytes):
                     """QUEUE FOR OLD PLAYERS"""
-                    if len(data) == Struct.BUFFER_SIZE_EVENT_RESPONSE:
-                        # Enviar inmediatamente las actualizaciones de movimiento
+                    if len(data) == Struct.BUFFER_SIZE_EVENT_RESPONSE or len(data) == Struct.SIZE_PLAYER:
+                        # Enviar inmediatamente las actualizaciones de movimiento y disparos
                         for conn in self._sockets:
                             self._executor.submit(send_data, conn, data)
                     else:

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="35" height="25" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="169">
+ <tileset firstgid="1" source="tiles.tsx"/>
+ <layer id="1" name="piso" width="35" height="25">
+  <data encoding="csv">
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,4,4,4,2,2,2,2,4,4,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,2,2,3,2,2,2,3,2,2,2,2,2,2,2,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,3,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,3,2,2,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,4,4,4,4,2,2,2,2,4,4,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+</data>
+ </layer>
+ <objectgroup id="2" name="player">
+  <object id="136" name="player" x="323" y="677" width="87" height="55"/>
+  <object id="1" name="player" x="403.5" y="160.5" width="87" height="55"/>
+ </objectgroup>
+ <objectgroup id="3" name="bricks">
+  <object id="3" name="brick" x="128.125" y="639.5" width="31.75" height="32.25"/>
+  <object id="4" name="brick" x="159.636" y="607.818" width="32.6818" height="32.1818"/>
+  <object id="6" name="brick" x="447.636" y="576.182" width="32.1818" height="31.6364"/>
+  <object id="10" name="brick" x="544" y="576" width="31.6364" height="31.8182"/>
+  <object id="13" name="brick" x="31.8182" y="544.136" width="32.2273" height="31.6818"/>
+  <object id="15" name="brick" x="127.636" y="479.818" width="32.3636" height="32.3636"/>
+  <object id="16" name="brick" x="256" y="448.25" width="31.9167" height="31.75"/>
+  <object id="19" name="brick" x="671.818" y="448" width="32.3636" height="32.125"/>
+  <object id="20" name="brick" x="736.015" y="288.048" width="31.875" height="32"/>
+  <object id="21" name="brick" x="383.75" y="384" width="32.5" height="32"/>
+  <object id="22" name="brick" x="255.5" y="383.5" width="32.5" height="32.75"/>
+  <object id="23" name="brick" x="95.5" y="383.75" width="32.25" height="32.25"/>
+  <object id="26" name="brick" x="672" y="192" width="32" height="32"/>
+  <object id="30" name="brick" x="352.091" y="224" width="31.9091" height="31.6364"/>
+  <object id="32" name="brick" x="192" y="256" width="32" height="32"/>
+  <object id="34" name="brick" x="160" y="255.909" width="31.9091" height="32.0909"/>
+  <object id="35" name="brick" x="128" y="255.818" width="31.8182" height="32.1818"/>
+  <object id="36" name="brick" x="95.625" y="256" width="32.125" height="31.75"/>
+  <object id="37" name="brick" x="95.75" y="224.25" width="32.375" height="31.5"/>
+  <object id="38" name="brick" x="64.125" y="224" width="31.5" height="31.875"/>
+  <object id="39" name="brick" x="31.875" y="224" width="32.0625" height="31.9375"/>
+  <object id="40" name="brick" x="31.9375" y="192.125" width="31.9375" height="31.8125"/>
+  <object id="41" name="brick" x="32" y="159.875" width="31.875" height="31.9375"/>
+  <object id="42" name="brick" x="31.9773" y="511.989" width="31.9546" height="31.9387"/>
+  <object id="43" name="brick" x="32.0568" y="479.94" width="31.9546" height="31.9387"/>
+  <object id="44" name="brick" x="127.636" y="447.636" width="32.3636" height="32.3636"/>
+  <object id="45" name="brick" x="160.125" y="640.125" width="31.75" height="32.25"/>
+  <object id="46" name="brick" x="192.034" y="607.909" width="31.9318" height="32.1818"/>
+  <object id="47" name="brick" x="224.034" y="608.034" width="31.9318" height="32.1818"/>
+  <object id="48" name="brick" x="224.011" y="575.966" width="31.9318" height="32.1818"/>
+  <object id="49" name="brick" x="256.125" y="575.909" width="31.9318" height="32.1818"/>
+  <object id="50" name="brick" x="288.216" y="575.909" width="31.9318" height="32.1818"/>
+  <object id="51" name="brick" x="320.034" y="576" width="31.9318" height="32.1818"/>
+  <object id="52" name="brick" x="479.909" y="576.364" width="32.1818" height="31.6364"/>
+  <object id="53" name="brick" x="512.273" y="576.364" width="32.1818" height="31.6364"/>
+  <object id="54" name="brick" x="544.182" y="608.091" width="31.6364" height="31.8182"/>
+  <object id="55" name="brick" x="576.182" y="607.909" width="31.6364" height="31.8182"/>
+  <object id="56" name="brick" x="576.182" y="640.273" width="31.6364" height="31.8182"/>
+  <object id="57" name="brick" x="608.182" y="640.273" width="31.6364" height="31.8182"/>
+  <object id="58" name="brick" x="608.182" y="672.091" width="31.6364" height="31.8182"/>
+  <object id="59" name="brick" x="672.182" y="672.273" width="31.6364" height="31.8182"/>
+  <object id="60" name="brick" x="672.182" y="640.091" width="31.6364" height="31.8182"/>
+  <object id="64" name="brick" x="671.943" y="479.938" width="31.9886" height="32.125"/>
+  <object id="65" name="brick" x="287.792" y="448.25" width="31.9167" height="31.75"/>
+  <object id="66" name="brick" x="320.167" y="448.25" width="31.9167" height="31.75"/>
+  <object id="67" name="brick" x="352.292" y="448.125" width="31.9167" height="31.75"/>
+  <object id="68" name="brick" x="384.292" y="448.125" width="31.9167" height="31.75"/>
+  <object id="69" name="brick" x="416.167" y="448.125" width="31.9167" height="31.75"/>
+  <object id="70" name="brick" x="448.292" y="448.125" width="31.9167" height="31.75"/>
+  <object id="71" name="brick" x="480.167" y="448.125" width="31.9167" height="31.75"/>
+  <object id="72" name="brick" x="512.167" y="448.25" width="31.9167" height="31.75"/>
+  <object id="73" name="brick" x="544.042" y="448.125" width="31.9167" height="31.75"/>
+  <object id="74" name="brick" x="222.702" y="512.135" width="32.167" height="31.999"/>
+  <object id="75" name="brick" x="254.743" y="512.135" width="32.167" height="31.999"/>
+  <object id="76" name="brick" x="287.372" y="512.135" width="32.167" height="31.999"/>
+  <object id="77" name="brick" x="319.749" y="512.009" width="32.167" height="31.999"/>
+  <object id="78" name="brick" x="352" y="512.009" width="32.167" height="31.999"/>
+  <object id="79" name="brick" x="384.125" y="512.009" width="32.167" height="31.999"/>
+  <object id="80" name="brick" x="416.502" y="512.009" width="32.167" height="31.999"/>
+  <object id="81" name="brick" x="448.627" y="512.009" width="32.167" height="31.999"/>
+  <object id="82" name="brick" x="480.878" y="512.135" width="32.167" height="31.999"/>
+  <object id="83" name="brick" x="512.123" y="512.072" width="31.9167" height="31.75"/>
+  <object id="84" name="brick" x="544.405" y="512.125" width="31.9167" height="31.75"/>
+  <object id="85" name="brick" x="767.856" y="288.014" width="31.875" height="32"/>
+  <object id="86" name="brick" x="767.947" y="255.865" width="31.875" height="32"/>
+  <object id="87" name="brick" x="736.106" y="256.173" width="31.875" height="32"/>
+  <object id="88" name="brick" x="479.989" y="320.114" width="31.9167" height="31.75"/>
+  <object id="89" name="brick" x="511.989" y="320.239" width="31.9167" height="31.75"/>
+  <object id="90" name="brick" x="543.864" y="320.114" width="31.9167" height="31.75"/>
+  <object id="91" name="brick" x="575.943" y="320.046" width="31.9167" height="31.9722"/>
+  <object id="92" name="brick" x="607.943" y="320.014" width="31.9167" height="31.9375"/>
+  <object id="93" name="brick" x="608.12" y="288.03" width="31.875" height="32"/>
+  <object id="94" name="brick" x="608.013" y="256.03" width="31.875" height="32"/>
+  <object id="95" name="brick" x="608.042" y="223.989" width="31.875" height="32"/>
+  <object id="96" name="brick" x="607.935" y="191.989" width="31.875" height="32"/>
+  <object id="97" name="brick" x="607.975" y="159.978" width="31.875" height="32"/>
+  <object id="98" name="brick" x="608.085" y="127.978" width="31.875" height="32"/>
+  <object id="99" name="brick" x="255.978" y="320.112" width="31.9167" height="31.9375"/>
+  <object id="100" name="brick" x="256.155" y="288.128" width="31.875" height="32"/>
+  <object id="101" name="brick" x="256.048" y="256.128" width="31.875" height="32"/>
+  <object id="102" name="brick" x="256.077" y="224.087" width="31.875" height="32"/>
+  <object id="103" name="brick" x="255.97" y="192.087" width="31.875" height="32"/>
+  <object id="104" name="brick" x="256.01" y="160.076" width="31.875" height="32"/>
+  <object id="105" name="brick" x="256.12" y="128.076" width="31.875" height="32"/>
+  <object id="106" name="brick" x="352.091" y="320.046" width="32" height="32"/>
+  <object id="107" name="brick" x="320.091" y="319.955" width="31.9091" height="32.0909"/>
+  <object id="108" name="brick" x="288.091" y="319.864" width="31.8182" height="32.1818"/>
+  <object id="109" name="brick" x="352.106" y="256.056" width="31.9167" height="31.75"/>
+  <object id="110" name="brick" x="384.106" y="256.181" width="31.9167" height="31.75"/>
+  <object id="111" name="brick" x="415.981" y="256.056" width="31.9167" height="31.75"/>
+  <object id="112" name="brick" x="448.06" y="255.988" width="31.9167" height="31.9722"/>
+  <object id="113" name="brick" x="480.06" y="255.956" width="31.9167" height="31.9375"/>
+  <object id="114" name="brick" x="512.223" y="255.94" width="31.9167" height="31.9375"/>
+  <object id="115" name="brick" x="512.074" y="224.075" width="31.9167" height="31.9375"/>
+  <object id="126" name="brick" x="735.441" y="512" width="31.875" height="32"/>
+  <object id="127" name="brick" x="767.47" y="511.966" width="31.875" height="32"/>
+  <object id="128" name="brick" x="767.685" y="479.818" width="31.875" height="32"/>
+  <object id="129" name="brick" x="735.595" y="480" width="31.875" height="32"/>
+  <object id="131" name="block" x="800.178" y="128.057" width="31.9167" height="31.75"/>
+  <object id="134" name="block" x="800.042" y="640.625" width="31.9167" height="31.75"/>
+  <object id="137" name="brick" x="832.199" y="384.227" width="31.875" height="32"/>
+  <object id="138" name="brick" x="864.29" y="384.227" width="31.875" height="32"/>
+  <object id="139" name="brick" x="898.063" y="384" width="31.875" height="32"/>
+  <object id="140" name="brick" x="930.063" y="384" width="31.875" height="32"/>
+  <object id="141" name="brick" x="961.063" y="383.5" width="31.875" height="32"/>
+  <object id="142" name="brick" x="994.063" y="383.5" width="31.875" height="32"/>
+  <object id="143" name="brick" x="1025.56" y="383.5" width="31.875" height="32"/>
+  <object id="144" name="brick" x="1057.06" y="383.5" width="31.875" height="32"/>
+  <object id="145" name="brick" x="1089.06" y="384" width="31.875" height="32"/>
+  <object id="146" name="brick" x="95.625" y="351.375" width="32.25" height="32.25"/>
+  <object id="147" name="brick" x="95.75" y="319.875" width="32.25" height="32.25"/>
+  <object id="148" name="block" x="800.314" y="672.034" width="31.9167" height="31.75"/>
+  <object id="149" name="block" x="831.985" y="672.17" width="31.9167" height="31.75"/>
+  <object id="150" name="block" x="864.042" y="672.216" width="31.9167" height="31.75"/>
+  <object id="151" name="block" x="896.314" y="672.398" width="31.9167" height="31.75"/>
+  <object id="152" name="block" x="1056.1" y="672.125" width="31.9167" height="31.75"/>
+  <object id="153" name="block" x="1088.17" y="672.188" width="31.9167" height="31.75"/>
+  <object id="154" name="block" x="800.019" y="512.091" width="31.9167" height="31.75"/>
+  <object id="155" name="block" x="800.167" y="480.188" width="31.9167" height="31.75"/>
+  <object id="156" name="block" x="800.135" y="448.313" width="31.9167" height="31.75"/>
+  <object id="157" name="block" x="800.077" y="416.255" width="31.9167" height="31.75"/>
+  <object id="158" name="block" x="799.979" y="383.875" width="31.9167" height="32.1875"/>
+  <object id="159" name="block" x="800.042" y="352.063" width="31.9167" height="31.75"/>
+  <object id="160" name="block" x="800.216" y="320.139" width="31.9167" height="31.75"/>
+  <object id="161" name="block" x="800.229" y="288.063" width="31.9167" height="31.75"/>
+  <object id="162" name="block" x="800.066" y="256.052" width="31.9167" height="31.75"/>
+  <object id="163" name="block" x="799.979" y="96.0625" width="31.9167" height="31.75"/>
+  <object id="164" name="block" x="831.917" y="96.1875" width="31.9167" height="31.75"/>
+  <object id="165" name="block" x="863.998" y="96.1005" width="31.9167" height="31.75"/>
+  <object id="166" name="block" x="896.042" y="96.0625" width="31.9167" height="31.75"/>
+  <object id="167" name="block" x="1056.08" y="96.1705" width="31.9167" height="31.75"/>
+  <object id="168" name="block" x="1088.17" y="96.125" width="31.9167" height="31.75"/>
+ </objectgroup>
+ <objectgroup id="4" name="blocks"/>
+ <layer id="5" name="ladrillos" width="35" height="25" visible="0">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,1,1,1,1,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,
+0,0,0,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,
+0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,
+0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+</map>

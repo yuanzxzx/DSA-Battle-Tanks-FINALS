@@ -5,6 +5,7 @@ import sys
 from typing import Tuple, Dict, Union, List
 import pygame as pg
 import math
+import copy
 
 from battle_tanks.commons.package import Struct, Collision
 from battle_tanks.components.movement import MovementComponent
@@ -19,6 +20,7 @@ from battle_tanks import ROUTE
 
 
 type_guns = {
+    "BASIC": CannonType(20,"BASIC",(5,7)),
     "MEDIUM": CannonType(20,"MEDIUM",(8,10)),
 }
 pg.mixer.init()
@@ -69,7 +71,7 @@ class Game:
         else:
             position = (0,0)
 
-        self.player = Player(position, self._player_number, cannon_type=type_guns.get("MEDIUM"), tank_color=tank_color)
+        self.player = Player(position, self._player_number, cannon_type=copy.deepcopy(type_guns.get("MEDIUM")), tank_color=tank_color)
         self.players[self._player_number] = self.player
         self.camera = CameraComponent(self.tile.WIDTH, self.tile.HEIGHT, (self.WIDTH, self.HEIGHT))
         self.move = MovementComponent(self.network, self.player)
@@ -141,16 +143,19 @@ class Game:
                         recv.get("status") == Struct.OLD_PLAYER):
                     position = recv["position"]
                     tank_color = recv.get("tank_color", 0)
-                    player = Player((recv["x"],recv["y"]), position, cannon_type = type_guns.get("BASIC"), tank_color=tank_color)
+                    player = Player((recv["x"],recv["y"]), position, cannon_type = copy.deepcopy(type_guns.get("BASIC")), tank_color=tank_color)
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
                 #zmon
-                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT):
+                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED):
                     position = recv["position"]
-                #zmon   
+                 #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
                 #        self.camera.shake()
                         SOUND_BOOM.play()
+                    elif recv.get("status") == Struct.PLAYER_FIRED:
+                        if position != self._player_number and self.players.get(position):
+                            self.players[position].fire = True
                 #zmon
                     if self.players.get(position):
                         player = self.players[position]

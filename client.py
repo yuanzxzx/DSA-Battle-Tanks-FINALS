@@ -142,9 +142,7 @@ def main():
                 if key == pg.K_l and menu.select_option is not None:
                     game.player.laser_active = False
                     game.network.send_move_tcp(Struct.LASER_OFF_EVENT) #jam
-            elif event.type == pg.KEYUP:
-                key = event.dict.get("key")
-                if key == pg.K_o:
+                elif key == pg.K_o:
                     if game.player.check_available_bullets():
                         game.player.fire = True
                         game.network.send_move_tcp(Struct.FIRE_EVENT_PLAYER)

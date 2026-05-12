@@ -55,8 +55,9 @@ class Struct:
     BRICK:int = 5
     BLOCK:int = 6
     PLAYER_SHOT:int = 7
+    PLAYER_FIRED:int = 8
 
-    STATUS_PLAYER = [UPDATE_PLAYER, NEW_PLAYER, OLD_PLAYER, PLAYER_SHOT]
+    STATUS_PLAYER = [UPDATE_PLAYER, NEW_PLAYER, OLD_PLAYER, PLAYER_SHOT, PLAYER_FIRED]
 
     MOVES = [
             LEFT_EVENT_PLAYER,
@@ -183,6 +184,9 @@ class Struct:
                     data_wrapped.append(Struct.unpack_event(chunk))
 
                 index = step
+            else:
+                index += 1
+                step += 1
 
 
 
@@ -235,7 +239,7 @@ class Struct:
                 data_collided["type"] = Struct.BROKE_BRICK
             return Struct.pack_tile(data_collided)
 
-        return False
+        return Struct.pack_player(None, player_data, Struct.PLAYER_FIRED)
 
 
     @staticmethod
