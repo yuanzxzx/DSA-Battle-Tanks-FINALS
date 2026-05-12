@@ -210,9 +210,13 @@ class Collision:
 
     @classmethod
     def check_bullet_at_point(cls, x: float, y: float):
-        ##SERVER SIDE: Checks if a single X/Y point touches a brick 
         for brick in list(cls.bricks):
             if brick.rect.collidepoint(x, y):
+                if hasattr(brick, 'data'):
+                    list_game_state: List[bytes] = cls.game_state.split(brick.data)
+                    cls.game_state = b"".join(map(bytes, list_game_state))
+                brick.remove(cls.bricks) #jam
+
                 from battle_tanks.commons.package import Struct 
                 return Struct.pack_tile({
                     "type": Struct.BROKE_BRICK,
