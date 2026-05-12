@@ -308,6 +308,9 @@ class Server:
                         continue
 
                     new_player:dict = data
+                    new_player.setdefault("laser_active", False) 
+                    new_player.setdefault("angle", 0)
+                    new_player.setdefault("angle_cannon", 0) #laser defaults jam
                     current = new_player.get("position")
 
                     if new_player.get("deleted") is not None:
