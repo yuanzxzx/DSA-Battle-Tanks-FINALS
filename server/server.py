@@ -382,6 +382,17 @@ class Server:
                         current_time = time.time()
                         if current_time - self.tick_last_sent >= TICK_RATE:
                             self.tick_last_sent = current_time
+                            for pos, p_data in self._data.items():
+                                if p_data.get("laser_active"):
+                                    laser_hit_something = False
+                                    for distance in range(30, 301, 5):
+                                        lx, ly = Collision.calculate_bullet_position(p_data, distance)
+                                        hit = Collision.check_bullet_at_point(lx, ly)
+                                        if hit:
+                                            laser_hit_something = True
+                                            q.put(hit) 
+                                        if laser_hit_something:
+                                            break #jam hitscan laser
                             for conn in self._sockets:
                                 self._executor.submit(send_data, conn, Struct.pack_players(self._data))
 
