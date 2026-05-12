@@ -182,6 +182,17 @@ class Server:
                             else:
                                 q.put(encoded_message)
 
+                    elif data == Struct.LASER_ON_EVENT:
+                        player_data["laser_active"] = True
+                    elif data == Struct.LASER_OFF_EVENT:
+                        player_data["laser_active"] = False
+                    elif len(data) == Struct.BUFFER_SIZE_EVENT_RESPONSE and data[0] == 97:
+                        event = Struct.unpack_event(data)
+                        target_id = event[1]
+                        damage = event[2]
+                        if target_id in self._data:
+                            self._data[target_id]["damage_indicator"] += damage #jam
+
             except (ConnectionResetError, ConnectionRefusedError, socket.error) as e:
                 logger.error(f"LOG ERROR: {e}")
                 print(f"ERROR IN SOCKET: {e}")
