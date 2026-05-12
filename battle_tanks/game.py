@@ -274,7 +274,21 @@ class Game:
             tank_rect = self.camera.apply(player)
             tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
                        angle_cannon=player.angle_cannon)
-            
+
+            if getattr(player, "laser_active", False):
+                import math
+                rad_angle = math.radians(-player.angle_cannon - 90)
+                
+                barrel_offset = 20 
+                start_pos = (
+                    tank_rect.centerx + barrel_offset * math.cos(rad_angle),
+                    tank_rect.centery + barrel_offset * math.sin(rad_angle)
+                )
+                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
+                
+                pg.draw.line(self.SCREEN, (255, 50, 50), start_pos, end_pos, 5)
+                pg.draw.line(self.SCREEN, (255, 255, 255), start_pos, end_pos, 2) #jam
+           
             # Dibujar el nombre del jugador
             font = pg.font.Font(None, 24)  # Crear una fuente
             text_surface = font.render(player.name, True, (255, 255, 255))  # Texto blanco
