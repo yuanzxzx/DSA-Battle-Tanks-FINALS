@@ -38,6 +38,10 @@ def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite
             return sprite
     return False
 
+# lars
+class GameState:
+    LOBBY = 0
+    BATTLE = 1
 
 class Game:
     def __init__(self,
@@ -99,6 +103,15 @@ class Game:
         self.fov_mask.blit(sub_mask, (0, 0), special_flags=pg.BLEND_RGBA_SUB)
 # kca
         self.load()
+        
+# lars       
+        self.state = GameState.LOBBY
+        self.start_ticks = pg.time.get_ticks() # current time
+        self.lobby_duration = 5 * 60 * 1000 # 5 mins in ms
+        
+        pg.mixer.music.load(ROUTE("assets/sound/lobby_track.mp3"))
+        pg.mixer.music.set_volume(0.3)
+        pg.mixer.music.play(-1)  # loop indefinitely
 
 
     @property
@@ -116,6 +129,20 @@ class Game:
 
     def update(self):
         """ Update Game"""
+        
+    # lars
+        # checks if we're in lobby and if mag switch na to battle
+        if self.state == GameState.LOBBY:
+            current_time = pg.time.get_ticks()
+            elapsed_time = current_time - self.start_ticks
+            
+            keys = pg.key.get_pressed()
+            if elapsed_time >= 300000 or keys[pg.K_SPACE]:
+                self.state = GameState.BATTLE
+                
+                pg.mixer.music.load(ROUTE("assets/sound/main_track.mp3"))
+                pg.mixer.music.set_volume(0.3)
+                pg.mixer.music.play(-1)
 
         for key,player in self.players.items():
             if player.fire:

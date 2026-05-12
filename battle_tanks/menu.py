@@ -36,6 +36,10 @@ class Menu:
                 "action": "MULTIPLAYER_MODE"
             },
         }
+    #lars      # menu music
+        pg.mixer.music.load(ROUTE("assets/sound/menu_track.mp3"))
+        pg.mixer.music.set_volume(0.5)
+        pg.mixer.music.play(-1)
 
 
     def multiplayer_mode(self, game_screen) -> Union[Game, None]:
@@ -155,6 +159,8 @@ class Menu:
                             if len(user_text) > 0 and len(name) > 0:
                                 check_name = NetworkComponent.check_name((ip_text, int(user_text)), name)
                                 if check_name:
+                        # lars      # fade menu music when entering game
+                                    pg.mixer.music.fadeout(500)
                                     game = Game((ip_text, int(user_text)), game_screen, name, self.selected_tank_color)
                                     if game.network.player_data != Struct.USER_NOT_AVAILABLE:
                                         return game
