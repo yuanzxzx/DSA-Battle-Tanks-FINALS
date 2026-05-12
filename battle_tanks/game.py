@@ -220,9 +220,42 @@ class Game:
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
                   #  self.camera.shake() #zmon
+     
+        if getattr(self.player, "laser_active", False):
+            dt = 1/60 
+            hits = Collision.get_laser_intersections(self.player.telescopic_sight(), 300)
+            
+            for brick in hits.get("bricks", []):
+                brick_id = f"brick_{brick.rect.x}_{brick.rect.y}"
+                self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
+                if self.laser_timers[brick_id] >= 1.0:
+                    if brick in self._bricks: self._bricks.remove(brick)
+                    if brick in Collision.bricks: Collision.bricks.remove(brick)
+                    self._spawn_particles(brick.rect.centerx, brick.rect.centery)
+                    brick.kill()
+                    del self.laser_timers[brick_id]
+        
+        for p_id, enemy in self.players.items():
+            if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
+                import math
+                rad_angle = math.radians(-enemy.angle_cannon - 90)
+                start_pos = (enemy.rect.centerx, enemy.rect.centery)
+                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
+                if self.player.rect.clipline(start_pos, end_pos):
+                    if getattr(self, "laser_burn_cooldown", 0) <= 0:
+                        if self.network:
+                            from battle_tanks.commons.package import Struct
+                            dmg_packet = Struct.pack_tile({
+                                "type": 97, "x": self._player_number, "y": 10, "w": 0, "h": 0
+                            })
+                            self.network.send_move_tcp(dmg_packet)
+                        self.laser_burn_cooldown = 15 # Take damage every 1/4 second
+                        self._spawn_particles(self.player.rect.centerx, self.player.rect.centery, count=5)
+        
+        if getattr(self, "laser_burn_cooldown", 0) > 0:
+            self.laser_burn_cooldown -= 1
 
-
-        self.camera.update(self.player)
+        self.camera.update(self.player) #jam
 
 
     def draw(self, main_screen: pg.Surface):
