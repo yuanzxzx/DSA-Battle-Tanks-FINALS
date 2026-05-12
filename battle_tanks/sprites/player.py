@@ -46,6 +46,7 @@ class Player(Cannon):
         self.vly = 0
         self._life = 10
         self._dead = False
+        self.deaths = 0 #death for life system -Yu
 
 
     @staticmethod

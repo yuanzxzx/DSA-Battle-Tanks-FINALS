@@ -15,8 +15,13 @@ from battle_tanks.commons.package import Struct
 
 q = queue.SimpleQueue()
 
+#Yu (logging)
 if os.path.exists("battle_server.log"):
-    os.remove("battle_server.log")
+    try:
+        os.remove("battle_server.log")
+    except PermissionError:
+        pass
+#Yu (logging)
 
 logging.basicConfig(filename="battle_server.log",
                     filemode='a',

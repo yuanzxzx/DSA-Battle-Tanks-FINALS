@@ -42,6 +42,7 @@ def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite
 class GameState:
     LOBBY = 0
     BATTLE = 1
+    DEFEAT = 2 #defeat for 3 deaths -Yu
 
 class Game:
     def __init__(self,
@@ -143,7 +144,18 @@ class Game:
                 pg.mixer.music.load(ROUTE("assets/sound/main_track.mp3"))
                 pg.mixer.music.set_volume(0.3)
                 pg.mixer.music.play(-1)
+#yu (defeat state)
+        elif self.state == GameState.DEFEAT:
+            mouse_pressed = pg.mouse.get_pressed()
+            if mouse_pressed[0]:
+                mouse_pos = pg.mouse.get_pos()
+                btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
+                if btn_rect.collidepoint(mouse_pos):
+                    self.return_to_menu()
 
+        if getattr(self.player, 'deaths', 0) >= 3 and self.state != GameState.DEFEAT:
+            self.state = GameState.DEFEAT
+#yu (defeat state)
         for key,player in self.players.items():
             if player.fire:
                 SHOT.play()
@@ -158,8 +170,9 @@ class Game:
 
         self._bullets.update()
 
-        """ SEND MOVES BYTES """
-        self.move.keys()
+        if self.state != GameState.DEFEAT:
+            """ SEND MOVES BYTES """
+            self.move.keys()
         """ MOVES RESPONSE """
 
         if self.network:
@@ -195,12 +208,19 @@ class Game:
 
                         player.angle = recv["angle"]
                         player.angle_cannon = recv["angle_cannon"]
+#yu (defeat state)
+                        # Death detection: if incoming damage is less than current damage, it means the server reset it on death
+                        if recv["damage_indicator"] < player.damage:
+                            player.deaths = getattr(player, 'deaths', 0) + 1
+#yu (defeat state)
                         player.damage = recv["damage_indicator"]
 
                     else:
                         tank_color = recv.get("tank_color", 0)
                         player = Player((recv["x"], recv["y"]), position, cannon_type=type_guns.get("BASIC"), tank_color=tank_color)
                         player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
+#yu (defeat state)
+                        player.deaths = 0
                         self.players[position] = player
 
                 elif recv.get("status") == Struct.BROKE_BRICK:
@@ -266,6 +286,18 @@ class Game:
             # Barra de vida actual (roja)
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
+#Yu (life indicator)
+            # Indicador de vidas (3 corazones / círculos arriba del nombre)
+            deaths = getattr(player, 'deaths', 0)
+            lives_left = max(0, 3 - deaths)
+            lives_width = 10 * 3 + 4 * 2
+            lives_x = tank_rect.centerx - lives_width // 2
+            lives_y = text_rect.top - 8
+
+            for i in range(3):
+                color = (0, 255, 0) if i < lives_left else (100, 100, 100)
+                pg.draw.circle(self.SCREEN, color, (lives_x + i * 14 + 5, lives_y), 5)
+#Yu (life indicator)
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))
@@ -287,7 +319,46 @@ class Game:
 
         self.SCREEN.blit(Player.TELESCOPIC_SIGH, telescopic_rect)
         main_screen.blit(self.SCREEN, (0,0))
+#Yu (defeat state)
+        if self.state == GameState.DEFEAT:
+            # Defeat screen overlay
+            s = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
+            s.fill((128, 128, 128, 200)) # Gray with alpha
+            main_screen.blit(s, (0, 0))
+            
+            # Defeat red text
+            font_large = pg.font.Font(None, 84)
+            text_surface = font_large.render("DEFEAT", True, (255, 0, 0))
+            text_rect = text_surface.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 50))
+            main_screen.blit(text_surface, text_rect)
+            
+            # Go back to lobby button
+            btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
+            pg.draw.rect(main_screen, (200, 200, 200), btn_rect, border_radius=8)
+            pg.draw.rect(main_screen, (0, 0, 0), btn_rect, 3, border_radius=8)
+            
+            font_small = pg.font.Font(None, 36)
+            btn_text = font_small.render("Go to Menu", True, (0, 0, 0))
+            btn_text_rect = btn_text.get_rect(center=btn_rect.center)
+            main_screen.blit(btn_text, btn_text_rect)
+
     
+
+    def return_to_menu(self):
+        """ Cleanly restarts the client to return to the main menu """
+        if self.network:
+            try:
+                self.network.socket_tcp.send(Struct.CLOSE_CONN)
+                self.network.socket_tcp.close()
+            except Exception:
+                pass
+        
+        import os
+        import sys
+        
+        # Completely restart the process to cleanly wipe all game state, UI state, and network threads
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+#Yu (defeat state)
 
     def close(self):
         if self.network:
