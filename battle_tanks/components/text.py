@@ -2,7 +2,7 @@ from typing import Tuple
 import pygame as pg
 from battle_tanks import ROUTE
 
-FONT = ROUTE("assets/Pixel Digivolve.otf")
+FONT = ROUTE("dist/client/assets/Pixel Digivolve.otf")
 
 class TextComponent:
 

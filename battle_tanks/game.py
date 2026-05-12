@@ -257,14 +257,12 @@ class Game:
         
         for p_id, enemy in self.players.items():
             if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
-                import math
                 rad_angle = math.radians(-enemy.angle_cannon - 90)
                 start_pos = (enemy.rect.centerx, enemy.rect.centery)
                 end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
                 if self.player.rect.clipline(start_pos, end_pos):
                     if getattr(self, "laser_burn_cooldown", 0) <= 0:
                         if self.network:
-                            from battle_tanks.commons.package import Struct
                             dmg_packet = Struct.pack_tile({
                                 "type": 97, "x": self._player_number, "y": 10, "w": 0, "h": 0
                             })
