@@ -71,6 +71,9 @@ class Game:
         self._bullets = pg.sprite.Group()
         self._damage = 0
 
+        self.laser_timers = {}
+        self.laser_burn_cooldown = 0 #jam
+
         if self.network and self.network.player_data != Struct.USER_NOT_AVAILABLE:
             position = (self.network.player_data["x"],self.network.player_data["y"])
         else:
@@ -215,6 +218,8 @@ class Game:
 #yu (defeat state)
                         player.damage = recv["damage_indicator"]
 
+                        player.laser_active = recv.get("laser_active", getattr(player, "laser_active", False)) #jam
+
                     else:
                         tank_color = recv.get("tank_color", 0)
                         player = Player((recv["x"], recv["y"]), position, cannon_type=type_guns.get("BASIC"), tank_color=tank_color)
@@ -235,9 +240,42 @@ class Game:
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
                   #  self.camera.shake() #zmon
+     
+        if getattr(self.player, "laser_active", False):
+            dt = 1/60 
+            hits = Collision.get_laser_intersections(self.player.telescopic_sight(), 300)
+            
+            for brick in hits.get("bricks", []):
+                brick_id = f"brick_{brick.rect.x}_{brick.rect.y}"
+                self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
+                if self.laser_timers[brick_id] >= 1.0:
+                    if brick in self._bricks: self._bricks.remove(brick)
+                    if brick in Collision.bricks: Collision.bricks.remove(brick)
+                    self._spawn_particles(brick.rect.centerx, brick.rect.centery)
+                    brick.kill()
+                    del self.laser_timers[brick_id]
+        
+        for p_id, enemy in self.players.items():
+            if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
+                import math
+                rad_angle = math.radians(-enemy.angle_cannon - 90)
+                start_pos = (enemy.rect.centerx, enemy.rect.centery)
+                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
+                if self.player.rect.clipline(start_pos, end_pos):
+                    if getattr(self, "laser_burn_cooldown", 0) <= 0:
+                        if self.network:
+                            from battle_tanks.commons.package import Struct
+                            dmg_packet = Struct.pack_tile({
+                                "type": 97, "x": self._player_number, "y": 10, "w": 0, "h": 0
+                            })
+                            self.network.send_move_tcp(dmg_packet)
+                        self.laser_burn_cooldown = 15 # Take damage every 1/4 second
+                        self._spawn_particles(self.player.rect.centerx, self.player.rect.centery, count=5)
+        
+        if getattr(self, "laser_burn_cooldown", 0) > 0:
+            self.laser_burn_cooldown -= 1
 
-
-        self.camera.update(self.player)
+        self.camera.update(self.player) #jam
 
 
     def draw(self, main_screen: pg.Surface):
@@ -256,7 +294,21 @@ class Game:
             tank_rect = self.camera.apply(player)
             tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
                        angle_cannon=player.angle_cannon)
-            
+
+            if getattr(player, "laser_active", False):
+                import math
+                rad_angle = math.radians(-player.angle_cannon - 90)
+                
+                barrel_offset = 20 
+                start_pos = (
+                    tank_rect.centerx + barrel_offset * math.cos(rad_angle),
+                    tank_rect.centery + barrel_offset * math.sin(rad_angle)
+                )
+                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
+                
+                pg.draw.line(self.SCREEN, (255, 50, 50), start_pos, end_pos, 5)
+                pg.draw.line(self.SCREEN, (255, 255, 255), start_pos, end_pos, 2) #jam
+           
             # Dibujar el nombre del jugador
             font = pg.font.Font(None, 24)  # Crear una fuente
             text_surface = font.render(player.name, True, (255, 255, 255))  # Texto blanco
