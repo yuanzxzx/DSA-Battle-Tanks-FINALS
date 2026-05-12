@@ -2,8 +2,6 @@
 
 > **Version:** 1.0 | **Engine:** Pygame | **Architecture:** Client-Server (TCP)
 
----
-
 ## Table of Contents
 
 1. [High-Level System Architecture](#1-high-level-system-architecture)
