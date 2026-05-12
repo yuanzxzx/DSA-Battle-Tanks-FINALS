@@ -104,12 +104,14 @@ def main():
 
     clock = pg.time.Clock()
     WIDTH,HEIGHT = 800, 600
-    SCREEN = pg.display.set_mode((WIDTH,HEIGHT + 36))
+    SCREEN = pg.display.set_mode((WIDTH,HEIGHT + 60))
+    hud_bg = pg.image.load(ROUTE("assets/images/hud_bg.png")).convert_alpha()
+    hud_bg = pg.transform.scale(hud_bg, (WIDTH, 60))
 
     main_game = pg.Surface((WIDTH,HEIGHT))
     menu = Menu(SCREEN)
     game = menu.update(main_game)
-    text_damage = TextComponent((WIDTH//2,HEIGHT +16 ),f"Damage: {game.damage} %")
+    text_damage = TextComponent((WIDTH//2,HEIGHT +30 ),f"Damage: {game.damage} %", color=(168, 0, 0), font_size=40)
     bullets = pg.Surface((WIDTH,36))
 
 
@@ -150,11 +152,14 @@ def main():
             
         SCREEN.fill((0,0,0))
         game.update()
-        game.draw(SCREEN)
+        game.draw(main_game)
+        SCREEN.blit(main_game,(0,0))
+        SCREEN.blit(hud_bg,(0,HEIGHT))
 
-        bullets.fill((0,50,0))
+        bullets.set_colorkey((0, 0, 0))
+        bullets.fill((0,0,0))
         game.player.type_gun.render(bullets)
-        SCREEN.blit(bullets,(0,HEIGHT))
+        SCREEN.blit(bullets, (0, HEIGHT + 12))
 
 
         text_damage.text = f"Damage: {game.damage} %"
