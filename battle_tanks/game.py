@@ -200,6 +200,8 @@ class Game:
                         player.angle_cannon = recv["angle_cannon"]
                         player.damage = recv["damage_indicator"]
 
+                        player.laser_active = recv.get("laser_active", getattr(player, "laser_active", False)) #jam
+
                     else:
                         tank_color = recv.get("tank_color", 0)
                         player = Player((recv["x"], recv["y"]), position, cannon_type=type_guns.get("BASIC"), tank_color=tank_color)
