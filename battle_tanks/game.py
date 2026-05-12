@@ -70,6 +70,9 @@ class Game:
         self._bullets = pg.sprite.Group()
         self._damage = 0
 
+        self.laser_timers = {}
+        self.laser_burn_cooldown = 0 #jam
+
         if self.network and self.network.player_data != Struct.USER_NOT_AVAILABLE:
             position = (self.network.player_data["x"],self.network.player_data["y"])
         else:
