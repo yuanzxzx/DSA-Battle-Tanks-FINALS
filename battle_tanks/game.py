@@ -26,10 +26,13 @@ type_guns = {
 pg.mixer.init()
 SOUND_BOOM = pg.mixer.Sound(ROUTE("assets/sound/boom.wav"))
 SHOT = pg.mixer.Sound(ROUTE("assets/sound/shot.wav"))
+SHOTGUN = pg.mixer.Sound(ROUTE("assets/sound/shotgun_fx.mp3"))
 
 SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
+SHOTGUN.set_volume(0.3)
 
+playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
 def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite, bool]:
     for sprite in group:
@@ -49,6 +52,9 @@ class Game:
                  screen:pg.Surface,
                  player_name="John",
                  tank_color:int=0):
+        
+        global playend_end_sound
+        playend_end_sound = False # Reset end game sound flag on new game start
 
         self.network = NetworkComponent(addr, player_name, tank_color) if addr is not None else None
         self._player_number = self.network.player_number if addr is not None else 0
@@ -150,6 +156,7 @@ class Game:
 #yu (defeat state)
 # Handle Defeat Menu
         if self.state == 2:
+            
             if pg.mouse.get_pressed()[0]:
                 btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
                 if btn_rect.collidepoint(pg.mouse.get_pos()):
@@ -158,6 +165,7 @@ class Game:
 
         #-Yu (Victory handling menu)
         if self.state == 3:
+
             if pg.mouse.get_pressed()[0]:
                 btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
                 if btn_rect.collidepoint(pg.mouse.get_pos()):
@@ -216,7 +224,7 @@ class Game:
 
             #-Yu (spawn 5 bullets for shotgun blast)
             if getattr(player, 'shotgun_fire', False):
-                SHOT.play()
+                SHOTGUN.play()
                 for offset in [-20, -10, 0, 10, 20]:
                     rad = math.radians(player.angle_cannon + offset)
                     start_x = player.rect.centerx + math.sin(rad) * -30
