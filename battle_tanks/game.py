@@ -405,18 +405,27 @@ class Game:
                        angle_cannon=player.angle_cannon)
 
             if getattr(player, "laser_active", False):
-              # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
                 rad_angle = math.radians(-player.angle_cannon - 90)
-                
                 barrel_offset = 20 
-                start_pos = (
-                    tank_rect.centerx + barrel_offset * math.cos(rad_angle),
-                    tank_rect.centery + barrel_offset * math.sin(rad_angle)
-                )
-                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
                 
-                pg.draw.line(self.SCREEN, (255, 50, 50), start_pos, end_pos, 5)
-                pg.draw.line(self.SCREEN, (255, 255, 255), start_pos, end_pos, 2) #jam
+                world_start = (player.rect.centerx, player.rect.centery)
+                world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
+                
+                closest_dist = 300
+                for brick in self._bricks:
+                    clip = brick.rect.clipline(world_start, world_max_end)
+                    if clip:
+                        dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                        if dist < closest_dist:
+                            closest_dist = dist
+                            
+                draw_len = max(0, closest_dist - barrel_offset)
+                start_x = tank_rect.centerx + barrel_offset * math.cos(rad_angle)
+                start_y = tank_rect.centery + barrel_offset * math.sin(rad_angle)
+                draw_end = (start_x + draw_len * math.cos(rad_angle), start_y + draw_len * math.sin(rad_angle))
+                
+                pg.draw.line(self.SCREEN, (255, 50, 50), (start_x, start_y), draw_end, 5)
+                pg.draw.line(self.SCREEN, (255, 255, 255), (start_x, start_y), draw_end, 2) #jam
            
             # Dibujar el nombre del jugador
             font = pg.font.Font(None, 24)  # Crear una fuente
