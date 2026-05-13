@@ -20,8 +20,8 @@ from battle_tanks import ROUTE
 
 
 type_guns = {
-    "BASIC": CannonType(20,"BASIC",(5,7)),
-    "MEDIUM": CannonType(20,"MEDIUM",(8,10)),
+    "BASIC": CannonType(6,"BASIC",(5,7)),
+    "MEDIUM": CannonType(6,"MEDIUM",(8,10)),
 }
 pg.mixer.init()
 SOUND_BOOM = pg.mixer.Sound(ROUTE("assets/sound/boom.wav"))
@@ -34,7 +34,6 @@ SHOT.set_volume(0.1)
 SHOTGUN.set_volume(0.3) # lars
 LASER.set_volume(0.1) # lars
 
-playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
 def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite, bool]:
     for sprite in group:
@@ -44,9 +43,6 @@ def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite
 
 class GameState:
     DEFEAT = 2 #defeat for 3 deaths -Yu
-    #-Yu (Victory state)
-    VICTORY = 3
-    #-Yu (Victory state)
 
 class Game:
     def __init__(self,
@@ -54,9 +50,6 @@ class Game:
                  screen:pg.Surface,
                  player_name="John",
                  tank_color:int=0):
-        
-        global playend_end_sound
-        playend_end_sound = False # Reset end game sound flag on new game start
 
         self.network = NetworkComponent(addr, player_name, tank_color) if addr is not None else None
         self._player_number = self.network.player_number if addr is not None else 0
@@ -69,7 +62,6 @@ class Game:
         self.WIDTH,self.HEIGHT = screen.get_size()
         self.SCREEN = screen
 
-        #-Yu (load heart images for life system)
         try:
             self.heart_full_img = pg.image.load(ROUTE("assets/images/heart_full.png")).convert_alpha()
             self.heart_full_img = pg.transform.scale(self.heart_full_img, (12, 12))
@@ -79,7 +71,6 @@ class Game:
             print("Warning: Could not load heart images, falling back to circles.", e)
             self.heart_full_img = None
             self.heart_empty_img = None
-        #-Yu (load heart images for life system)
 
         self.tile = TileMap(self.network.lvl_map)
         self.tile_image = self.tile.make_map()
@@ -89,6 +80,8 @@ class Game:
         self._bricks = pg.sprite.Group()
         self._bullets = pg.sprite.Group()
         self._damage = 0
+
+        self.last_shot_time = -10000 # Pacinio - track last shot time for cooldowns
 
         self.laser_timers = {}
         self.laser_burn_cooldown = 0 #jam
@@ -107,10 +100,6 @@ class Game:
         self.FOV_RADIUS = 300
         self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
         self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
-        
-        #-Yu (track max players to know when to trigger victory)
-        self.max_players_seen = 0
-        #-Yu (track max players to know when to trigger victory)
         
         self.FOG_COLOR = (80, 80, 80, 255) # Gray fog
         self.fov_mask.fill(self.FOG_COLOR) # Start fully opaque
@@ -158,55 +147,14 @@ class Game:
 #yu (defeat state)
 # Handle Defeat Menu
         if self.state == 2:
-            
             if pg.mouse.get_pressed()[0]:
                 btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
                 if btn_rect.collidepoint(pg.mouse.get_pos()):
                     self.return_to_menu()
             return # Don't update game logic if defeated
 
-        #-Yu (Victory handling menu)
-        if self.state == 3:
-
-            if pg.mouse.get_pressed()[0]:
-                btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
-                if btn_rect.collidepoint(pg.mouse.get_pos()):
-                    self.return_to_menu()
-            return # Don't update game logic if victorious
-        #-Yu (Victory handling menu)
-
-        #-Yu (disconnect server collision when player dies 3 times)
         if getattr(self.player, 'deaths', 0) >= 3:
             self.state = 2
-            # Immediately disconnect to remove the tank from the server's collision tracking
-            if self.network:
-                try:
-                    self.network.socket_tcp.send(Struct.CLOSE_CONN)
-                    self.network.socket_tcp.close()
-                except Exception:
-                    pass
-                self.network = None
-        #-Yu (disconnect server collision when player dies 3 times)
-
-        #-Yu (check victory condition)
-        self.max_players_seen = max(self.max_players_seen, len(self.players))
-        if self.state == 1 and self.max_players_seen > 1:
-            alive_players = 0
-            for p_id, p in self.players.items():
-                if getattr(p, 'deaths', 0) < 3:
-                    alive_players += 1
-            # If we are the only one left alive!
-            if alive_players == 1 and getattr(self.player, 'deaths', 0) < 3:
-                self.state = 3
-                # Disconnect since game is over
-                if self.network:
-                    try:
-                        self.network.socket_tcp.send(Struct.CLOSE_CONN)
-                        self.network.socket_tcp.close()
-                    except Exception:
-                        pass
-                    self.network = None
-        #-Yu (check victory condition)
 
         for key, player in self.players.items():
             if player.fire:
@@ -214,7 +162,7 @@ class Game:
                 rad = math.radians(player.angle_cannon)
                 start_x = player.rect.centerx + math.sin(rad) * -30
                 start_y = player.rect.centery + math.cos(rad) * -30
-                self._bullets.add(Bullet(start_x, start_y, player.angle_cannon, owner=player))
+                self._bullets.add(Bullet(start_x, start_y, player.angle_cannon))
                 
                 if player.player_number == self._player_number:
                     recoil_dist = 10
@@ -224,34 +172,7 @@ class Game:
 
                 player.fire = False
 
-            #-Yu (spawn 5 bullets for shotgun blast)
-            if getattr(player, 'shotgun_fire', False):
-                SHOTGUN.play()
-                for offset in [-20, -10, 0, 10, 20]:
-                    rad = math.radians(player.angle_cannon + offset)
-                    start_x = player.rect.centerx + math.sin(rad) * -30
-                    start_y = player.rect.centery + math.cos(rad) * -30
-                    self._bullets.add(Bullet(start_x, start_y, player.angle_cannon + offset))
-                
-                if player.player_number == self._player_number:
-                    recoil_dist = 15
-                    rad = math.radians(player.angle_cannon)
-                    player.rect.x += int(math.sin(rad) * recoil_dist)
-                    player.rect.y += int(math.cos(rad) * recoil_dist)
-                    player.body_rect.center = player.rect.center
-                
-                player.shotgun_fire = False
-            #-Yu (spawn 5 bullets for shotgun blast)
-
         self._bullets.update()
-        for bullet in list(self._bullets):
-            if find_sprite(bullet.rect, self._bricks):
-                bullet.kill()
-                continue
-            for p_id, p in self.players.items():
-                if getattr(bullet, 'owner', None) != p and p.rect.colliderect(bullet.rect):
-                    bullet.kill()
-                    break
         
         """ SEND MOVES BYTES """
         self.move.keys()
@@ -269,7 +190,7 @@ class Game:
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
                 #zmon
-                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED, Struct.PLAYER_SHOTGUN):
+                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED):
                     position = recv["position"]
                  #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
@@ -278,9 +199,6 @@ class Game:
                     elif recv.get("status") == Struct.PLAYER_FIRED:
                         if position != self._player_number and self.players.get(position):
                             self.players[position].fire = True
-                    elif recv.get("status") == Struct.PLAYER_SHOTGUN:
-                        if position != self._player_number and self.players.get(position):
-                            self.players[position].shotgun_fire = True
                 #zmon
                     if self.players.get(position):
                         player = self.players[position]
@@ -294,15 +212,11 @@ class Game:
                         player.angle = recv["angle"]
                         player.angle_cannon = recv["angle_cannon"]
 #yu (defeat state)
-                        #-Yu (death detection with 1s cooldown to prevent UDP packet order bugs)
-                        # We use a 1000ms cooldown to prevent UDP out-of-order packets from counting a single death multiple times (e.g. from a shotgun blast)
+                        # Death detection: if incoming damage is less than current damage, it means the server reset it on death
                         if recv["damage_indicator"] < player.damage:
-                            current_time = pg.time.get_ticks()
-                            if current_time - getattr(player, 'last_death_time', 0) > 1000:
-                                player.deaths = getattr(player, 'deaths', 0) + 1
-                                player.last_death_time = current_time
+                            player.deaths = getattr(player, 'deaths', 0) + 1
+#yu (defeat state)
                         player.damage = recv["damage_indicator"]
-                        #-Yu (death detection with 1s cooldown to prevent UDP packet order bugs)
 
                         player.laser_active = recv.get("laser_active", getattr(player, "laser_active", False)) #jam
 
@@ -314,13 +228,13 @@ class Game:
                         player.deaths = 0
                         self.players[position] = player
 
-                elif recv.get("status") in (5, Struct.BROKE_BRICK):
+                elif recv.get("status") == Struct.BROKE_BRICK:
                     brick_rect = pg.Rect(recv["x"], recv["y"], recv["w"], recv["h"])
                     sprite_brick = find_sprite(brick_rect, self._bricks)
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
-                        if sprite_brick in Collision.bricks: sprite_brick.remove(Collision.bricks)
                         SOUND_BOOM.play()
+              #          self.camera.shake() #zmon
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
@@ -328,38 +242,18 @@ class Game:
                   #  self.camera.shake() #zmon
      
         if getattr(self.player, "laser_active", False):
-            rad_angle = math.radians(-self.player.angle_cannon - 90)
-            world_start = (self.player.rect.centerx, self.player.rect.centery)
-            world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
+            dt = 1/60 
+            hits = Collision.get_laser_intersections(self.player.telescopic_sight(), 300)
             
-            closest_brick = None
-            closest_dist = 300
-            
-            # Find the first brick in the path
-            for brick in self._bricks:
-                clip = brick.rect.clipline(world_start, world_max_end)
-                if clip:
-                    dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
-                    if dist < closest_dist:
-                        closest_dist = dist
-                        closest_brick = brick
-                        
-            if closest_brick:
-                dt = 1/60 
-                brick_id = f"brick_{closest_brick.rect.x}_{closest_brick.rect.y}"
+            for brick in hits.get("bricks", []):
+                brick_id = f"brick_{brick.rect.x}_{brick.rect.y}"
                 self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
-                
                 if self.laser_timers[brick_id] >= 1.0:
-                    if self.network:
-                        # Send the tiny 1-byte command to the Server!
-                        try:
-                            self.network.socket_tcp.sendall(b'\x50')
-                        except: pass
-                    
-                    # We don't delete the wall manually anymore! 
-                    # The server will instantly reply with the exact same BROKE_BRICK packet a bullet uses,
-                    # and the client's receiving loop will play the sound and delete the wall perfectly!
-                    del self.laser_timers[brick_id] #jam
+                    if brick in self._bricks: self._bricks.remove(brick)
+                    if brick in Collision.bricks: Collision.bricks.remove(brick)
+                    self._spawn_particles(brick.rect.centerx, brick.rect.centery)
+                    brick.kill()
+                    del self.laser_timers[brick_id]
         
         for p_id, enemy in self.players.items():
             if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
@@ -387,11 +281,6 @@ class Game:
         self.SCREEN.blit(self.tile_image,self.camera.apply_rect(self.tile_rect))
 #kca
         for _,player in self.players.items():
-            #-Yu (hide completely defeated players)
-            if getattr(player, 'deaths', 0) >= 3:
-                continue # Do not draw defeated players
-            #-Yu (hide completely defeated players)
-            
             # Fog of War visibility check
             if player != self.player:
                 dist = math.hypot(self.player.rect.centerx - player.rect.centerx, 
@@ -442,27 +331,18 @@ class Game:
                     if p.energy > p.max_energy:
                         p.energy = p.max_energy
             if getattr(player, "laser_active", False):
+              # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
                 rad_angle = math.radians(-player.angle_cannon - 90)
+                
                 barrel_offset = 20 
+                start_pos = (
+                    tank_rect.centerx + barrel_offset * math.cos(rad_angle),
+                    tank_rect.centery + barrel_offset * math.sin(rad_angle)
+                )
+                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
                 
-                world_start = (player.rect.centerx, player.rect.centery)
-                world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
-                
-                closest_dist = 300
-                for brick in self._bricks:
-                    clip = brick.rect.clipline(world_start, world_max_end)
-                    if clip:
-                        dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
-                        if dist < closest_dist:
-                            closest_dist = dist
-                            
-                draw_len = max(0, closest_dist - barrel_offset)
-                start_x = tank_rect.centerx + barrel_offset * math.cos(rad_angle)
-                start_y = tank_rect.centery + barrel_offset * math.sin(rad_angle)
-                draw_end = (start_x + draw_len * math.cos(rad_angle), start_y + draw_len * math.sin(rad_angle))
-                
-                pg.draw.line(self.SCREEN, (255, 50, 50), (start_x, start_y), draw_end, 5)
-                pg.draw.line(self.SCREEN, (255, 255, 255), (start_x, start_y), draw_end, 2) #jam
+                pg.draw.line(self.SCREEN, (255, 50, 50), start_pos, end_pos, 5)
+                pg.draw.line(self.SCREEN, (255, 255, 255), start_pos, end_pos, 2) #jam
            
             # Dibujar el nombre del jugador
             font = pg.font.Font(None, 24)  # Crear una fuente
@@ -493,19 +373,7 @@ class Game:
             # Barra de vida actual (roja)
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
-            
-            energy_y = health_y + health_height + 2 # Places it flush beneath the health bar
-            energy = getattr(player, "energy", 100.0)
-            max_energy = getattr(player, "max_energy", 100.0)
-            
-            # Draw background track (Dark Blue)
-            pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
-            
-            # Draw foreground active energy (Bright Cyan)
-            current_energy_width = int(health_width * (energy / max_energy))
-            if current_energy_width > 0:
-                pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height))
-            #-Yu (heart UI life indicator)
+#Yu (life indicator)
             # Indicador de vidas (3 corazones arriba del nombre)
             deaths = getattr(player, 'deaths', 0)
             lives_left = max(0, 3 - deaths)
@@ -520,7 +388,7 @@ class Game:
                 else:
                     color = (0, 255, 0) if i < lives_left else (100, 100, 100)
                     pg.draw.circle(self.SCREEN, color, (lives_x + i * 16 + 6, lives_y + 6), 5)
-            #-Yu (heart UI life indicator)
+#Yu (life indicator)
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))
@@ -565,30 +433,8 @@ class Game:
             btn_text_rect = btn_text.get_rect(center=btn_rect.center)
             main_screen.blit(btn_text, btn_text_rect)
 
-        #-Yu (draw victory screen)
-        if self.state == GameState.VICTORY:
-            # Victory screen overlay
-            s = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
-            s.fill((0, 0, 0, 150)) # Dark transparent
-            main_screen.blit(s, (0, 0))
-            
-            # Victory yellow text
-            font_large = pg.font.Font(None, 84)
-            text_surface = font_large.render("VICTORY", True, (255, 255, 0))
-            text_rect = text_surface.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 50))
-            main_screen.blit(text_surface, text_rect)
-            
-            # Go back to menu button
-            btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
-            pg.draw.rect(main_screen, (200, 200, 200), btn_rect, border_radius=8)
-            pg.draw.rect(main_screen, (0, 0, 0), btn_rect, 3, border_radius=8)
-            
-            font_small = pg.font.Font(None, 36)
-            btn_text = font_small.render("Go to Menu", True, (0, 0, 0))
-            btn_text_rect = btn_text.get_rect(center=btn_rect.center)
-            main_screen.blit(btn_text, btn_text_rect)
-        #-Yu (draw victory screen)
     
+
     def return_to_menu(self):
         """ Cleanly restarts the client to return to the main menu """
         pg.mixer.Channel(7).stop() # lars - stop any looping laser sound immediately on menu return

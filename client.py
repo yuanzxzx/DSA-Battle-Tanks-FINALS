@@ -163,9 +163,13 @@ def main():
                     game.player.laser_active = False
                     game.network.send_move_tcp(Struct.LASER_OFF_EVENT)
                 elif key == pg.K_o and game.state != 2:
-                    if game.player.check_available_bullets():
-                        game.player.fire = True
-                        game.network.send_move_tcp(Struct.FIRE_EVENT_PLAYER)
+                    current_time = pg.time.get_ticks() # Pacinio
+                    cooldown_duration = 835 # Pacinio
+                    if current_time - game.last_shot_time >= cooldown_duration:
+                        if game.player.check_available_bullets():
+                            game.last_shot_time = current_time
+                            game.player.fire = True
+                            game.network.send_move_tcp(Struct.FIRE_EVENT_PLAYER)
 
         
         SCREEN.fill((0,0,0))
