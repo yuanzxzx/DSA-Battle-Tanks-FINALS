@@ -32,6 +32,7 @@ SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
 SHOTGUN.set_volume(0.3)
 
+playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
 def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite, bool]:
     for sprite in group:
