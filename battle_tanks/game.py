@@ -31,17 +31,13 @@ SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
 
 
-
 def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite, bool]:
     for sprite in group:
         if sprite.rect.colliderect(rect):
             return sprite
     return False
 
-# lars
 class GameState:
-    LOBBY = 0
-    BATTLE = 1
     DEFEAT = 2 #defeat for 3 deaths -Yu
 
 class Game:
@@ -107,16 +103,15 @@ class Game:
         self.fov_mask.blit(sub_mask, (0, 0), special_flags=pg.BLEND_RGBA_SUB)
 # kca
         self.load()
-        
-# lars       
-        self.state = GameState.LOBBY
-        self.start_ticks = pg.time.get_ticks() # current time
-        self.lobby_duration = 5 * 60 * 1000 # 5 mins in ms
-        
-        pg.mixer.music.load(ROUTE("assets/sound/lobby_track.mp3"))
-        pg.mixer.music.set_volume(0.3)
-        pg.mixer.music.play(-1)  # loop indefinitely
 
+# lars        
+        pg.mixer.music.stop() 
+        pg.mixer.music.load(ROUTE("assets/sound/main_track.mp3"))
+        pg.mixer.music.set_volume(0.3)
+        pg.mixer.music.play(-1)
+        
+        self.state = 1
+        
 
     @property
     def damage(self):
@@ -133,49 +128,31 @@ class Game:
 
     def update(self):
         """ Update Game"""
-        
-    # lars
-        # checks if we're in lobby and if mag switch na to battle
-        if self.state == GameState.LOBBY:
-            current_time = pg.time.get_ticks()
-            elapsed_time = current_time - self.start_ticks
-            
-            keys = pg.key.get_pressed()
-            if elapsed_time >= 300000 or keys[pg.K_SPACE]:
-                self.state = GameState.BATTLE
-                
-                pg.mixer.music.load(ROUTE("assets/sound/main_track.mp3"))
-                pg.mixer.music.set_volume(0.3)
-                pg.mixer.music.play(-1)
 #yu (defeat state)
-        elif self.state == GameState.DEFEAT:
-            mouse_pressed = pg.mouse.get_pressed()
-            if mouse_pressed[0]:
-                mouse_pos = pg.mouse.get_pos()
+# Handle Defeat Menu
+        if self.state == 2:
+            if pg.mouse.get_pressed()[0]:
                 btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
-                if btn_rect.collidepoint(mouse_pos):
+                if btn_rect.collidepoint(pg.mouse.get_pos()):
                     self.return_to_menu()
+            return # Don't update game logic if defeated
 
-        if getattr(self.player, 'deaths', 0) >= 3 and self.state != GameState.DEFEAT:
-            self.state = GameState.DEFEAT
-#yu (defeat state)
-        for key,player in self.players.items():
+        if getattr(self.player, 'deaths', 0) >= 3:
+            self.state = 2
+
+        for key, player in self.players.items():
             if player.fire:
                 SHOT.play()
-                
-                
-                radian_angle = math.radians(player.angle_cannon)
-                start_x = player.rect.centerx + math.sin(radian_angle) * -30
-                start_y = player.rect.centery + math.cos(radian_angle) * -30
+                rad = math.radians(player.angle_cannon)
+                start_x = player.rect.centerx + math.sin(rad) * -30
+                start_y = player.rect.centery + math.cos(rad) * -30
                 self._bullets.add(Bullet(start_x, start_y, player.angle_cannon))
-                
                 player.fire = False
 
         self._bullets.update()
-
-        if self.state != GameState.DEFEAT:
-            """ SEND MOVES BYTES """
-            self.move.keys()
+        
+        """ SEND MOVES BYTES """
+        self.move.keys()
         """ MOVES RESPONSE """
 
         if self.network:

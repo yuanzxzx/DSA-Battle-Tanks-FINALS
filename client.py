@@ -7,10 +7,11 @@ import math
 from typing import Tuple, List
 
 from battle_tanks.components.text import TextComponent
-from battle_tanks import  ROUTE
+from battle_tanks import  ROUTE, game
 from battle_tanks.commons.package import Struct
 from battle_tanks.components import NetworkComponent
 from battle_tanks.menu import Menu
+from battle_tanks.game import GameState
 
 
 # class Collision:
@@ -125,31 +126,28 @@ def main():
     th_recevied.start()
     th_send.start()
 
-
-
-
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 game.close()
+            
             elif event.type == pg.KEYDOWN:
-                key = event.dict.get("key")
-                # Laser ON
-                if key == pg.K_l and menu.select_option is not None and game.state != 2:
+                key = event.key
+                if key == pg.K_l and game.state != 2:
                     game.player.laser_active = True
                     game.network.send_move_tcp(Struct.LASER_ON_EVENT)
+            
             elif event.type == pg.KEYUP:
-                key = event.dict.get("key")
-                # Laser OFF
-                if key == pg.K_l and menu.select_option is not None:
+                key = event.key
+                if key == pg.K_l:
                     game.player.laser_active = False
-                    game.network.send_move_tcp(Struct.LASER_OFF_EVENT) #jam
-                elif key == pg.K_o:
-                    if game.state != 2 and game.player.check_available_bullets():
+                    game.network.send_move_tcp(Struct.LASER_OFF_EVENT)
+                elif key == pg.K_o and game.state != 2:
+                    if game.player.check_available_bullets():
                         game.player.fire = True
                         game.network.send_move_tcp(Struct.FIRE_EVENT_PLAYER)
 
-            
+        
         SCREEN.fill((0,0,0))
         game.update()
         game.draw(main_game)
@@ -165,10 +163,6 @@ def main():
         text_damage.text = f"Damage: {game.damage} %"
         text_damage.update()
         text_damage.draw(SCREEN)
-
-        """
-        TICKS IN CLIENT
-        """
         clock.tick(60)
         pg.display.flip()
 
