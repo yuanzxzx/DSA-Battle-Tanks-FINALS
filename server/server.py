@@ -5,6 +5,7 @@ import sys
 import os
 import queue
 import logging
+import math
 from typing import Dict, List
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
@@ -143,6 +144,7 @@ class Server:
                     )
                     player["deleted"] = True
                     q.put(player)
+                    break
 
                 if data == Struct.CLOSE_CONN:
                     logger.warning(f"CLOSED: {client_socket.getsockname()} "
@@ -162,6 +164,7 @@ class Server:
                             )
                             player["deleted"] = True
                             q.put(player)
+                    break
 
                 position = self._get_player_position(client_socket)
                 if position >= 0:
@@ -180,9 +183,18 @@ class Server:
                         q.put(encoded_message)
 
                     elif data == Struct.FIRE_EVENT_PLAYER:
+                        rad = math.radians(player_data["angle_cannon"])
+                        recoil_dist = 10
+                        player_data["x"] += math.sin(rad) * recoil_dist
+                        player_data["y"] += math.cos(rad) * recoil_dist
+                        Collision.collide_with_objects(player_data)
+
                         encoded_message = Struct.pack_event(player_data)
                         if encoded_message:
                             q.put(encoded_message)
+                        
+                        # Immediately send the updated player position to all clients to reflect recoil instantly
+                        q.put(Struct.pack_player(None, player_data))
 
                     elif data == Struct.LASER_ON_EVENT:
                         player_data["laser_active"] = True
@@ -250,7 +262,12 @@ class Server:
                         if player_name.find("-c") > -1:
                             if player_name[:-2] in self._filter_name:
                                 conn.send(Struct.USER_NOT_AVAILABLE)
-                            conn.send(Struct.OK_MESSAGE)
+                            else:
+                                conn.send(Struct.OK_MESSAGE)
+                            try:
+                                conn.close()
+                            except Exception:
+                                pass
                             continue
 
                         current = list(set(range(self._max_players)) - set([position for position, _ in self._data.items()]))[0]
@@ -261,6 +278,10 @@ class Server:
                             if player_name in self._filter_name:
                                 logger.debug(f"NAME IN DATA: {self._filter_name} TO: {Struct.USER_NOT_AVAILABLE}")
                                 conn.send(Struct.USER_NOT_AVAILABLE)
+                                try:
+                                    conn.close()
+                                except Exception:
+                                    pass
                                 continue
 
                         conn.send(Struct.pack(Collision.lvl_map))
