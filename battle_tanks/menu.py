@@ -408,7 +408,9 @@ class Menu:
                     "P - Rotate Right",
                     "",
                     "ACTIONS:",
-                    "O - Fire Bullet"
+                    "O - Fire Bullet",
+                    "K - Fire Shotgun",
+                    "L - Fire Laser (Hold)"
                 ]
                 
                 y_offset = 55
