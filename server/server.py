@@ -228,6 +228,40 @@ class Server:
                         player_data["laser_active"] = True
                     elif data == Struct.LASER_OFF_EVENT:
                         player_data["laser_active"] = False
+                    elif data == b'\x50':
+                        rad_angle = math.radians(-player_data.get("angle_cannon", 0) - 90)
+                        start_x, start_y = Collision.calculate_bullet_position(player_data, 0)
+                        end_x = start_x + 350 * math.cos(rad_angle)
+                        end_y = start_y + 350 * math.sin(rad_angle)
+
+                        closest_brick = None
+                        closest_dist = 400
+
+                        for brick in list(Collision.bricks):
+                            clip = brick.rect.inflate(10, 10).clipline((start_x, start_y), (end_x, end_y))
+                            if clip:
+                                dist = math.hypot(clip[0][0] - start_x, clip[0][1] - start_y)
+                                if dist < closest_dist:
+                                    closest_dist = dist
+                                    closest_brick = brick
+
+                        if closest_brick:
+                            if hasattr(closest_brick, 'data'):
+                                list_game_state = Collision.game_state.split(closest_brick.data)
+                                Collision.game_state = b"".join(map(bytes, list_game_state))
+                            
+                            if closest_brick in Collision.bricks:
+                                Collision.bricks.remove(closest_brick)
+
+                            try:
+                                packet = Struct.pack_tile({
+                                    "type": 5,
+                                    "x": closest_brick.rect.x, "y": closest_brick.rect.y, 
+                                    "w": closest_brick.rect.w, "h": closest_brick.rect.h
+                                })
+                                for conn in self._sockets:
+                                    self._executor.submit(send_data, conn, packet)
+                            except: pass #jam
                     elif len(data) == Struct.BUFFER_SIZE_EVENT_RESPONSE and data[0] == 97:
                         event = Struct.unpack_event(data)
                         target_id = event[1]
