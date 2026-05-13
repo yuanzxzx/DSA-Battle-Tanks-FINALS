@@ -15,7 +15,7 @@ class Player(Cannon):
     ANGLE_RIGHT = 1
     ANGLE_LEFT = -1
     SIZE_BODY_RECT = (32,32)
-    DAMAGE =  10
+    DAMAGE =  33.34 #YU - Damage changed into 33.34 from 10 (to kill enemy in 3 shots)
     MAX_DAMAGE = 100
 
 
