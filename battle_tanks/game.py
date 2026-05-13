@@ -324,7 +324,26 @@ class Game:
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
                   #  self.camera.shake() #zmon
-     
+        dt = 1/60
+        for p_id, p in self.players.items():
+            if not hasattr(p, "energy"):
+                p.energy = 100.0
+                p.max_energy = 100.0
+
+            if getattr(p, "laser_active", False):
+                p.energy -= 35.0 * dt  
+                if p.energy <= 0:
+                    p.energy = 0
+                    if p.player_number == self._player_number:
+                        p.laser_active = False
+                        if self.network:
+                            try: self.network.socket_tcp.sendall(Struct.LASER_OFF_EVENT)
+                            except: pass
+            else:
+                if p.energy < p.max_energy:
+                    p.energy += 15.0 * dt  
+                    if p.energy > p.max_energy:
+                        p.energy = p.max_energy
         if getattr(self.player, "laser_active", False):
             rad_angle = math.radians(-self.player.angle_cannon - 90)
             world_start = (self.player.rect.centerx, self.player.rect.centery)
