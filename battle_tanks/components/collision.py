@@ -16,6 +16,102 @@ class Collision:
     lvl_map:str = ""
     game_state:bytes = b""
     positions = []
+    #zmon
+    active_bullets: List[dict] = []
+
+    @classmethod
+    def add_bullet(cls, player_data: dict, collision_radius: int = 30):
+        start_pos = cls.calculate_bullet_position(player_data, 0)
+        radian_angle = math.radians(player_data["angle_cannon"])
+        bullet = {
+            "x": float(start_pos[0]),
+            "y": float(start_pos[1]),
+            "vx": -math.sin(radian_angle) * 7,
+            "vy": -math.cos(radian_angle) * 7,
+            "distance_traveled": 0,
+            "max_distance": 130,
+            "owner": player_data,
+            "radius": collision_radius
+        }
+        cls.active_bullets.append(bullet)
+
+    @classmethod
+    def update_bullets(cls) -> List[bytes]:
+        """
+        Updates active bullets over time. Returns a list of event packets (e.g. brick broken or player hit)
+        to be broadcasted to clients.
+        """
+        packets = []
+        for bullet in list(cls.active_bullets):
+            bullet["x"] += bullet["vx"]
+            bullet["y"] += bullet["vy"]
+            bullet["distance_traveled"] += math.sqrt(bullet["vx"]**2 + bullet["vy"]**2)
+
+            bullet_pos = (bullet["x"], bullet["y"])
+            collision_radius = bullet["radius"]
+            owner_name = bullet["owner"].get("name")
+
+            # Check collision with bricks
+            hit_brick = False
+            for brick in cls.bricks:
+                target_pos = brick.rect.center
+                distance = math.sqrt((bullet_pos[0] - target_pos[0]) ** 2 +
+                                     (bullet_pos[1] - target_pos[1]) ** 2)
+                if distance <= collision_radius:
+                    from battle_tanks.commons.package import Struct
+                    list_game_state: List[bytes] = cls.game_state.split(brick.data)
+                    cls.game_state = b"".join(map(bytes, list_game_state))
+                    brick.remove(cls.bricks)
+                    
+                    packet = Struct.pack_tile({
+                        "type": Struct.BROKE_BRICK,
+                        "x": brick.rect.x,
+                        "y": brick.rect.y,
+                        "w": brick.rect.w,
+                        "h": brick.rect.h,
+                    })
+                    packets.append(packet)
+                    hit_brick = True
+                    break
+
+            if hit_brick:
+                cls.active_bullets.remove(bullet)
+                continue
+
+            # Check collision with players
+            hit_player = False
+            for other_player in cls.players:
+                if other_player.get("name") == owner_name:
+                    continue
+
+                target_pos = (other_player["x"] + 16, other_player["y"] + 16)
+                distance = math.sqrt((bullet_pos[0] - target_pos[0]) ** 2 +
+                                     (bullet_pos[1] - target_pos[1]) ** 2)
+                if distance <= collision_radius:
+                    from battle_tanks.commons.package import Struct
+                    other_player["damage_indicator"] += Player.DAMAGE
+
+                    if other_player["damage_indicator"] >= Player.MAX_DAMAGE:
+                        random_index = random.randint(0, len(cls.positions) - 1) if cls.positions else 0
+                        other_player["damage_indicator"] = 0
+                        if cls.positions:
+                            other_player["x"] = cls.positions[random_index][0]
+                            other_player["y"] = cls.positions[random_index][1]
+
+                    packet = Struct.pack_player(None, other_player, Struct.PLAYER_SHOT)
+                    packets.append(packet)
+                    hit_player = True
+                    break
+
+            if hit_player:
+                cls.active_bullets.remove(bullet)
+                continue
+
+            if bullet["distance_traveled"] >= bullet["max_distance"]:
+                cls.active_bullets.remove(bullet)
+
+        return packets
+#zmon
 
 
     @staticmethod
@@ -29,8 +125,8 @@ class Collision:
         vlx = distance * - math.sin(radian_angle)
         vly = distance * - math.cos(radian_angle)
 
-        x = player_data["x"] + math.sin(radian_angle) * -30
-        y = player_data["y"] + math.cos(radian_angle) * -30
+        x = player_data["x"] + 16 + math.sin(radian_angle) * -30
+        y = player_data["y"] + 16 + math.cos(radian_angle) * -30
 
         x += vlx
         y += vly
@@ -45,9 +141,9 @@ class Collision:
         :param collision_radius: radius of collision
         """
         bullet_start_pos = Collision.calculate_bullet_position(player_data, 0)  # Starting position
-        bullet_end_pos = Collision.calculate_bullet_position(player_data, 100)  # End position
+        bullet_end_pos = Collision.calculate_bullet_position(player_data, 130)  # End position
 
-        steps = 10
+        steps = 13
         for step in range(steps + 1):
             t = step / steps
             bullet_pos = (
@@ -84,9 +180,9 @@ class Collision:
         :param collision_radius: radius of collision
         """
         bullet_start_pos = Collision.calculate_bullet_position(player_data, 0)  # Starting position
-        bullet_end_pos = Collision.calculate_bullet_position(player_data, 100)  # End position
+        bullet_end_pos = Collision.calculate_bullet_position(player_data, 130)  # End position
 
-        steps = 10
+        steps = 13
         for step in range(steps + 1):
             t = step / steps
             bullet_pos = (
@@ -100,7 +196,7 @@ class Collision:
                 if other_player.get("name") == player_data.get("name"):
                     continue
 
-                target_pos = (other_player["x"], other_player["y"])
+                target_pos = (other_player["x"] + 16, other_player["y"] + 16)
                 distance = math.sqrt((bullet_pos[0] - target_pos[0]) ** 2 +
                                      (bullet_pos[1] - target_pos[1]) ** 2)
                 collided = distance <= collision_radius

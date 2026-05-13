@@ -96,14 +96,18 @@ class NetworkComponent:
         """ get data player and states game"""
         try:
             data = self._socket_tcp.recv(120)
-            if data != b'':
-                data_set = Struct.unpack_all_data(data)
-                return list(map(NetworkComponent._modify_data, data_set))
+            if data == b'':
+                import time
+                time.sleep(0.1)
+                return []
+            data_set = Struct.unpack_all_data(data)
+            return list(map(NetworkComponent._modify_data, data_set))
         except BlockingIOError as e:
             # print(f"BLOCKING AS: {e}")
             pass
         except socket.error as e:
-            print(f"THERE IS A ERROR: {e}")
+            import time
+            time.sleep(0.1)
             pass
 
         return []
