@@ -39,6 +39,9 @@ def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite
 
 class GameState:
     DEFEAT = 2 #defeat for 3 deaths -Yu
+    #-Yu (Victory state)
+    VICTORY = 3
+    #-Yu (Victory state)
 
 class Game:
     def __init__(self,
@@ -97,6 +100,10 @@ class Game:
         self.fog = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
         self.fov_mask = pg.Surface((self.FOV_RADIUS * 2, self.FOV_RADIUS * 2), pg.SRCALPHA)
         
+        #-Yu (track max players to know when to trigger victory)
+        self.max_players_seen = 0
+        #-Yu (track max players to know when to trigger victory)
+        
         self.FOG_COLOR = (80, 80, 80, 255) # Gray fog
         self.fov_mask.fill(self.FOG_COLOR) # Start fully opaque
         
@@ -149,6 +156,15 @@ class Game:
                     self.return_to_menu()
             return # Don't update game logic if defeated
 
+        #-Yu (Victory handling menu)
+        if self.state == 3:
+            if pg.mouse.get_pressed()[0]:
+                btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
+                if btn_rect.collidepoint(pg.mouse.get_pos()):
+                    self.return_to_menu()
+            return # Don't update game logic if victorious
+        #-Yu (Victory handling menu)
+
         #-Yu (disconnect server collision when player dies 3 times)
         if getattr(self.player, 'deaths', 0) >= 3:
             self.state = 2
@@ -161,6 +177,26 @@ class Game:
                     pass
                 self.network = None
         #-Yu (disconnect server collision when player dies 3 times)
+
+        #-Yu (check victory condition)
+        self.max_players_seen = max(self.max_players_seen, len(self.players))
+        if self.state == 1 and self.max_players_seen > 1:
+            alive_players = 0
+            for p_id, p in self.players.items():
+                if getattr(p, 'deaths', 0) < 3:
+                    alive_players += 1
+            # If we are the only one left alive!
+            if alive_players == 1 and getattr(self.player, 'deaths', 0) < 3:
+                self.state = 3
+                # Disconnect since game is over
+                if self.network:
+                    try:
+                        self.network.socket_tcp.send(Struct.CLOSE_CONN)
+                        self.network.socket_tcp.close()
+                    except Exception:
+                        pass
+                    self.network = None
+        #-Yu (check victory condition)
 
         for key, player in self.players.items():
             if player.fire:
@@ -441,8 +477,30 @@ class Game:
             btn_text_rect = btn_text.get_rect(center=btn_rect.center)
             main_screen.blit(btn_text, btn_text_rect)
 
+        #-Yu (draw victory screen)
+        if self.state == GameState.VICTORY:
+            # Victory screen overlay
+            s = pg.Surface((self.WIDTH, self.HEIGHT), pg.SRCALPHA)
+            s.fill((0, 0, 0, 150)) # Dark transparent
+            main_screen.blit(s, (0, 0))
+            
+            # Victory yellow text
+            font_large = pg.font.Font(None, 84)
+            text_surface = font_large.render("VICTORY", True, (255, 255, 0))
+            text_rect = text_surface.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 50))
+            main_screen.blit(text_surface, text_rect)
+            
+            # Go back to menu button
+            btn_rect = pg.Rect(self.WIDTH//2 - 100, self.HEIGHT//2 + 50, 200, 50)
+            pg.draw.rect(main_screen, (200, 200, 200), btn_rect, border_radius=8)
+            pg.draw.rect(main_screen, (0, 0, 0), btn_rect, 3, border_radius=8)
+            
+            font_small = pg.font.Font(None, 36)
+            btn_text = font_small.render("Go to Menu", True, (0, 0, 0))
+            btn_text_rect = btn_text.get_rect(center=btn_rect.center)
+            main_screen.blit(btn_text, btn_text_rect)
+        #-Yu (draw victory screen)
     
-
     def return_to_menu(self):
         """ Cleanly restarts the client to return to the main menu """
         if self.network:
