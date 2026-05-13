@@ -312,38 +312,19 @@ class Game:
                         player.deaths = 0
                         self.players[position] = player
 
-                elif recv.get("status") == Struct.BROKE_BRICK:
+                elif recv.get("status") in (5, Struct.BROKE_BRICK):
                     brick_rect = pg.Rect(recv["x"], recv["y"], recv["w"], recv["h"])
                     sprite_brick = find_sprite(brick_rect, self._bricks)
                     if sprite_brick:
                         self._bricks.remove(sprite_brick)
+                        if sprite_brick in Collision.bricks: sprite_brick.remove(Collision.bricks)
                         SOUND_BOOM.play()
-              #          self.camera.shake() #zmon
                         sprite_brick.kill()
 
                 elif recv.get("status") == Struct.BLOCK:
                     Brick.boom() #Change for Block sound
                   #  self.camera.shake() #zmon
-        dt = 1/60
-        for p_id, p in self.players.items():
-            if not hasattr(p, "energy"):
-                p.energy = 100.0
-                p.max_energy = 100.0
-
-            if getattr(p, "laser_active", False):
-                p.energy -= 35.0 * dt  
-                if p.energy <= 0:
-                    p.energy = 0
-                    if p.player_number == self._player_number:
-                        p.laser_active = False
-                        if self.network:
-                            try: self.network.socket_tcp.sendall(Struct.LASER_OFF_EVENT)
-                            except: pass
-            else:
-                if p.energy < p.max_energy:
-                    p.energy += 15.0 * dt  
-                    if p.energy > p.max_energy:
-                        p.energy = p.max_energy
+     
         if getattr(self.player, "laser_active", False):
             rad_angle = math.radians(-self.player.angle_cannon - 90)
             world_start = (self.player.rect.centerx, self.player.rect.centery)
@@ -368,9 +349,14 @@ class Game:
                 
                 if self.laser_timers[brick_id] >= 1.0:
                     if self.network:
+                        # Send the tiny 1-byte command to the Server!
                         try:
                             self.network.socket_tcp.sendall(b'\x50')
                         except: pass
+                    
+                    # We don't delete the wall manually anymore! 
+                    # The server will instantly reply with the exact same BROKE_BRICK packet a bullet uses,
+                    # and the client's receiving loop will play the sound and delete the wall perfectly!
                     del self.laser_timers[brick_id] #jam
         
         for p_id, enemy in self.players.items():
@@ -415,7 +401,31 @@ class Game:
             tank_rect = self.camera.apply(player)
             tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
                        angle_cannon=player.angle_cannon)
+            dt = 1/60
+        for p_id, p in self.players.items():
+            # Initialize energy if they don't have it yet
+            if not hasattr(p, "energy"):
+                p.energy = 100.0
+                p.max_energy = 100.0
 
+            if getattr(p, "laser_active", False):
+                # Drain energy (Lasts ~3 seconds of continuous fire)
+                p.energy -= 35.0 * dt  
+                if p.energy <= 0:
+                    p.energy = 0
+                    
+                    # If it is YOUR tank that ran out of energy, force the laser off!
+                    if p.player_number == self._player_number:
+                        p.laser_active = False
+                        if self.network:
+                            try: self.network.socket_tcp.sendall(Struct.LASER_OFF_EVENT)
+                            except: pass
+            else:
+                # Recharge energy when laser is off (Takes ~6.5 seconds to fully refill)
+                if p.energy < p.max_energy:
+                    p.energy += 15.0 * dt  
+                    if p.energy > p.max_energy:
+                        p.energy = p.max_energy
             if getattr(player, "laser_active", False):
                 rad_angle = math.radians(-player.angle_cannon - 90)
                 barrel_offset = 20 
@@ -468,14 +478,18 @@ class Game:
             # Barra de vida actual (roja)
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
-            energy_y = health_y + health_height + 2 
+            
+            energy_y = health_y + health_height + 2 # Places it flush beneath the health bar
             energy = getattr(player, "energy", 100.0)
             max_energy = getattr(player, "max_energy", 100.0)
             
+            # Draw background track (Dark Blue)
             pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
+            
+            # Draw foreground active energy (Bright Cyan)
             current_energy_width = int(health_width * (energy / max_energy))
             if current_energy_width > 0:
-                pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height)) #jam energy meter
+                pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height))
             #-Yu (heart UI life indicator)
             # Indicador de vidas (3 corazones arriba del nombre)
             deaths = getattr(player, 'deaths', 0)
