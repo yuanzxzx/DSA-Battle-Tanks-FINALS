@@ -281,7 +281,7 @@ class Game:
                        angle_cannon=player.angle_cannon)
 
             if getattr(player, "laser_active", False):
-                import math
+              # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
                 rad_angle = math.radians(-player.angle_cannon - 90)
                 
                 barrel_offset = 20 
