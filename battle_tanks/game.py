@@ -468,6 +468,14 @@ class Game:
             # Barra de vida actual (roja)
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
+            energy_y = health_y + health_height + 2 
+            energy = getattr(player, "energy", 100.0)
+            max_energy = getattr(player, "max_energy", 100.0)
+            
+            pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
+            current_energy_width = int(health_width * (energy / max_energy))
+            if current_energy_width > 0:
+                pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height)) #jam energy meter
             #-Yu (heart UI life indicator)
             # Indicador de vidas (3 corazones arriba del nombre)
             deaths = getattr(player, 'deaths', 0)
