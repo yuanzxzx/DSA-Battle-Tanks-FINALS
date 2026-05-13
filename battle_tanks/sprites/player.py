@@ -111,6 +111,21 @@ class Player(Cannon):
             self.type_gun.count_available -=1
 
 
+    #-Yu (shotgun fire property deducting ammo)
+    @property
+    def shotgun_fire(self):
+        """ return shotgun_fire """
+        return getattr(self, '_shotgun_fire', False)
+
+    @shotgun_fire.setter
+    def shotgun_fire(self, value:bool):
+        """ setter for shotgun_fire """
+        self._shotgun_fire = value
+        if self._shotgun_fire is True:
+            self.type_gun.count_available -= 5
+    #-Yu (shotgun fire property deducting ammo)
+
+
     def telescopic_sight(self):
         """ Draw the telescopic sight """
         return {

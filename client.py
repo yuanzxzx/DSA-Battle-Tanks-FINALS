@@ -115,6 +115,16 @@ def main():
     text_damage = TextComponent((WIDTH//2,HEIGHT +30 ),f"Damage: {game.damage} %", color=(168, 0, 0), font_size=40)
     bullets = pg.Surface((WIDTH,36))
 
+    #-Yu (load shotgun icon)
+    game.last_shotgun_time = -10000
+    try:
+        shotgun_icon = pg.image.load(ROUTE("assets/images/shotgun_icon.png")).convert_alpha()
+        shotgun_icon = pg.transform.scale(shotgun_icon, (40, 40))
+    except Exception:
+        shotgun_icon = pg.Surface((40, 40), pg.SRCALPHA)
+        pg.draw.circle(shotgun_icon, (100, 100, 100), (20, 20), 20)
+    #-Yu (load shotgun icon)
+
 
 
     """
@@ -136,6 +146,16 @@ def main():
                 if key == pg.K_l and game.state != 2:
                     game.player.laser_active = True
                     game.network.send_move_tcp(Struct.LASER_ON_EVENT)
+                #-Yu (listen for K key to fire shotgun)
+                elif key == pg.K_k and game.state != 2:
+                    current_time = pg.time.get_ticks()
+                    if current_time - game.last_shotgun_time >= 10000:
+                        if game.player.type_gun.limit is True or game.player.type_gun.count_available >= 5:
+                            game.last_shotgun_time = current_time
+                            game.player.shotgun_fire = True
+                            if game.network:
+                                game.network.send_move_tcp(Struct.SHOTGUN_EVENT_PLAYER)
+                #-Yu (listen for K key to fire shotgun)
             
             elif event.type == pg.KEYUP:
                 key = event.key
@@ -158,6 +178,20 @@ def main():
         bullets.fill((0,0,0))
         game.player.type_gun.render(bullets)
         SCREEN.blit(bullets, (0, HEIGHT + 12))
+
+        #-Yu (draw shotgun UI cooldown)
+        shotgun_x = WIDTH - 60
+        shotgun_y = HEIGHT + 10
+        SCREEN.blit(shotgun_icon, (shotgun_x, shotgun_y))
+        
+        current_time = pg.time.get_ticks()
+        time_since_shotgun = current_time - game.last_shotgun_time
+        if time_since_shotgun < 10000:
+            angle_ratio = 1 - (time_since_shotgun / 10000.0)
+            end_angle = angle_ratio * 2 * math.pi
+            rect = pg.Rect(shotgun_x, shotgun_y, 40, 40)
+            pg.draw.arc(SCREEN, (255, 0, 0), rect, math.pi/2, math.pi/2 + end_angle, 4)
+        #-Yu (draw shotgun UI cooldown)
 
 
         text_damage.text = f"Damage: {game.damage} %"

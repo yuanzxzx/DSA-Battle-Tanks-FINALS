@@ -196,6 +196,26 @@ class Server:
                         # Immediately send the updated player position to all clients to reflect recoil instantly
                         q.put(Struct.pack_player(None, player_data))
 
+                    #-Yu (handle shotgun hitscan for 5 bullets)
+                    elif data == Struct.SHOTGUN_EVENT_PLAYER:
+                        rad = math.radians(player_data["angle_cannon"])
+                        recoil_dist = 15
+                        player_data["x"] += math.sin(rad) * recoil_dist
+                        player_data["y"] += math.cos(rad) * recoil_dist
+                        Collision.collide_with_objects(player_data)
+                        
+                        original_angle = player_data["angle_cannon"]
+                        for offset in [-20, -10, 0, 10, 20]:
+                            player_data["angle_cannon"] = original_angle + offset
+                            encoded_message = Struct.pack_event(player_data)
+                            if encoded_message:
+                                q.put(encoded_message)
+                        player_data["angle_cannon"] = original_angle
+                        
+                        # Immediately send the shotgun fire event to all clients to visually spawn bullets
+                        q.put(Struct.pack_player(None, player_data, Struct.PLAYER_SHOTGUN))
+                    #-Yu (handle shotgun hitscan for 5 bullets)
+
                     elif data == Struct.LASER_ON_EVENT:
                         player_data["laser_active"] = True
                     elif data == Struct.LASER_OFF_EVENT:

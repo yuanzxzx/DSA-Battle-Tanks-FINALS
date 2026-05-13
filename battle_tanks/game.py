@@ -58,6 +58,7 @@ class Game:
         self.WIDTH,self.HEIGHT = screen.get_size()
         self.SCREEN = screen
 
+        #-Yu (load heart images for life system)
         try:
             self.heart_full_img = pg.image.load(ROUTE("assets/images/heart_full.png")).convert_alpha()
             self.heart_full_img = pg.transform.scale(self.heart_full_img, (12, 12))
@@ -67,6 +68,7 @@ class Game:
             print("Warning: Could not load heart images, falling back to circles.", e)
             self.heart_full_img = None
             self.heart_empty_img = None
+        #-Yu (load heart images for life system)
 
         self.tile = TileMap(self.network.lvl_map)
         self.tile_image = self.tile.make_map()
@@ -147,8 +149,18 @@ class Game:
                     self.return_to_menu()
             return # Don't update game logic if defeated
 
+        #-Yu (disconnect server collision when player dies 3 times)
         if getattr(self.player, 'deaths', 0) >= 3:
             self.state = 2
+            # Immediately disconnect to remove the tank from the server's collision tracking
+            if self.network:
+                try:
+                    self.network.socket_tcp.send(Struct.CLOSE_CONN)
+                    self.network.socket_tcp.close()
+                except Exception:
+                    pass
+                self.network = None
+        #-Yu (disconnect server collision when player dies 3 times)
 
         for key, player in self.players.items():
             if player.fire:
@@ -165,6 +177,25 @@ class Game:
                     player.body_rect.center = player.rect.center
 
                 player.fire = False
+
+            #-Yu (spawn 5 bullets for shotgun blast)
+            if getattr(player, 'shotgun_fire', False):
+                SHOT.play()
+                for offset in [-20, -10, 0, 10, 20]:
+                    rad = math.radians(player.angle_cannon + offset)
+                    start_x = player.rect.centerx + math.sin(rad) * -30
+                    start_y = player.rect.centery + math.cos(rad) * -30
+                    self._bullets.add(Bullet(start_x, start_y, player.angle_cannon + offset))
+                
+                if player.player_number == self._player_number:
+                    recoil_dist = 15
+                    rad = math.radians(player.angle_cannon)
+                    player.rect.x += int(math.sin(rad) * recoil_dist)
+                    player.rect.y += int(math.cos(rad) * recoil_dist)
+                    player.body_rect.center = player.rect.center
+                
+                player.shotgun_fire = False
+            #-Yu (spawn 5 bullets for shotgun blast)
 
         self._bullets.update()
         
@@ -184,7 +215,7 @@ class Game:
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
                 #zmon
-                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED):
+                elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED, Struct.PLAYER_SHOTGUN):
                     position = recv["position"]
                  #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
@@ -193,6 +224,9 @@ class Game:
                     elif recv.get("status") == Struct.PLAYER_FIRED:
                         if position != self._player_number and self.players.get(position):
                             self.players[position].fire = True
+                    elif recv.get("status") == Struct.PLAYER_SHOTGUN:
+                        if position != self._player_number and self.players.get(position):
+                            self.players[position].shotgun_fire = True
                 #zmon
                     if self.players.get(position):
                         player = self.players[position]
@@ -206,11 +240,15 @@ class Game:
                         player.angle = recv["angle"]
                         player.angle_cannon = recv["angle_cannon"]
 #yu (defeat state)
-                        # Death detection: if incoming damage is less than current damage, it means the server reset it on death
+                        #-Yu (death detection with 1s cooldown to prevent UDP packet order bugs)
+                        # We use a 1000ms cooldown to prevent UDP out-of-order packets from counting a single death multiple times (e.g. from a shotgun blast)
                         if recv["damage_indicator"] < player.damage:
-                            player.deaths = getattr(player, 'deaths', 0) + 1
-#yu (defeat state)
+                            current_time = pg.time.get_ticks()
+                            if current_time - getattr(player, 'last_death_time', 0) > 1000:
+                                player.deaths = getattr(player, 'deaths', 0) + 1
+                                player.last_death_time = current_time
                         player.damage = recv["damage_indicator"]
+                        #-Yu (death detection with 1s cooldown to prevent UDP packet order bugs)
 
                         player.laser_active = recv.get("laser_active", getattr(player, "laser_active", False)) #jam
 
@@ -275,6 +313,11 @@ class Game:
         self.SCREEN.blit(self.tile_image,self.camera.apply_rect(self.tile_rect))
 #kca
         for _,player in self.players.items():
+            #-Yu (hide completely defeated players)
+            if getattr(player, 'deaths', 0) >= 3:
+                continue # Do not draw defeated players
+            #-Yu (hide completely defeated players)
+            
             # Fog of War visibility check
             if player != self.player:
                 dist = math.hypot(self.player.rect.centerx - player.rect.centerx, 
@@ -329,7 +372,7 @@ class Game:
             # Barra de vida actual (roja)
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
-#Yu (life indicator)
+            #-Yu (heart UI life indicator)
             # Indicador de vidas (3 corazones arriba del nombre)
             deaths = getattr(player, 'deaths', 0)
             lives_left = max(0, 3 - deaths)
@@ -344,7 +387,7 @@ class Game:
                 else:
                     color = (0, 255, 0) if i < lives_left else (100, 100, 100)
                     pg.draw.circle(self.SCREEN, color, (lives_x + i * 16 + 6, lives_y + 6), 5)
-#Yu (life indicator)
+            #-Yu (heart UI life indicator)
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))

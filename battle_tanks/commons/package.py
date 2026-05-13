@@ -42,6 +42,9 @@ class Struct:
 
     """ FIRE EVENTS"""
     FIRE_EVENT_PLAYER: bytes = b'\x11'
+    #-Yu (shotgun event)
+    SHOTGUN_EVENT_PLAYER: bytes = b'\x12'
+    #-Yu (shotgun event)
 
     LASER_ON_EVENT = b"L_ON"
     LASER_OFF_EVENT = b"L_OFF" ##Laser event thing for server and client
@@ -56,8 +59,11 @@ class Struct:
     BLOCK:int = 6
     PLAYER_SHOT:int = 7
     PLAYER_FIRED:int = 8
+    #-Yu (shotgun player status)
+    PLAYER_SHOTGUN:int = 9
+    #-Yu (shotgun player status)
 
-    STATUS_PLAYER = [UPDATE_PLAYER, NEW_PLAYER, OLD_PLAYER, PLAYER_SHOT, PLAYER_FIRED]
+    STATUS_PLAYER = [UPDATE_PLAYER, NEW_PLAYER, OLD_PLAYER, PLAYER_SHOT, PLAYER_FIRED, PLAYER_SHOTGUN]
 
     MOVES = [
             LEFT_EVENT_PLAYER,
