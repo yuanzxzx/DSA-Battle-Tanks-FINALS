@@ -228,17 +228,7 @@ class Struct:
 
     @staticmethod
     def pack_event(player_data: dict) -> Union[bytes, bool]:
-        player_collided = Collision.check_collision_player(player_data,collision_radius=30)
-
-        if player_collided.get("player") is not None:
-            return Struct.pack_player(None, player_collided.get("player"), player_collided.get("type"))
-
-        data_collided = Collision.check_collision_bullet(player_data, 30)
-        if len(data_collided.items()) > 0:
-            if data_collided["type"] == Struct.BRICK:
-                data_collided["type"] = Struct.BROKE_BRICK
-            return Struct.pack_tile(data_collided)
-
+        Collision.add_bullet(player_data, 30)
         return Struct.pack_player(None, player_data, Struct.PLAYER_FIRED)
 
 

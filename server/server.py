@@ -83,10 +83,19 @@ class Server:
 
         th_1 = th.Thread(target = self._conexions, daemon = True)
         th_2 = th.Thread(target=self._handle_menu, daemon = True)
+        th_3 = th.Thread(target=self._game_loop, daemon = True)
         th_2.start()
         th_1.start()
+        th_3.start()
 
         self._receive()
+
+
+    def _game_loop(self):
+        logger.debug(f"INIT GAME_LOOP {th.current_thread().name}")
+        while True:
+            time.sleep(TICK_RATE)
+            q.put(b"TICK")
 
 
     def _get_position(self,current) -> tuple:
@@ -406,8 +415,11 @@ class Server:
                     else:
                         # Para otros tipos de datos, mantener el tick rate
                         current_time = time.time()
-                        if current_time - self.tick_last_sent >= TICK_RATE:
+                        if current_time - self.tick_last_sent >= TICK_RATE * 0.9:
                             self.tick_last_sent = current_time
+                            packets = Collision.update_bullets()
+                            for packet in packets:
+                                q.put(packet)
                             for pos, p_data in self._data.items():
                                 if p_data.get("laser_active"):
                                     laser_hit_something = False

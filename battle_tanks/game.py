@@ -156,7 +156,7 @@ class Game:
                 rad = math.radians(player.angle_cannon)
                 start_x = player.rect.centerx + math.sin(rad) * -30
                 start_y = player.rect.centery + math.cos(rad) * -30
-                self._bullets.add(Bullet(start_x, start_y, player.angle_cannon))
+                self._bullets.add(Bullet(start_x, start_y, player.angle_cannon, owner=player))
                 
                 if player.player_number == self._player_number:
                     recoil_dist = 10
@@ -167,6 +167,14 @@ class Game:
                 player.fire = False
 
         self._bullets.update()
+        for bullet in list(self._bullets):
+            if find_sprite(bullet.rect, self._bricks):
+                bullet.kill()
+                continue
+            for p_id, p in self.players.items():
+                if getattr(bullet, 'owner', None) != p and p.rect.colliderect(bullet.rect):
+                    bullet.kill()
+                    break
         
         """ SEND MOVES BYTES """
         self.move.keys()
