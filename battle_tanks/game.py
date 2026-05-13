@@ -368,16 +368,9 @@ class Game:
                 
                 if self.laser_timers[brick_id] >= 1.0:
                     if self.network:
-                        melt_packet = Struct.pack_tile({
-                            "type": Struct.BROKE_BRICK, "x": closest_brick.rect.x, "y": closest_brick.rect.y, "w": closest_brick.rect.w, "h": closest_brick.rect.h
-                        })
-                        self.network.send_move_tcp(melt_packet)
-                    
-                    if closest_brick in self._bricks: self._bricks.remove(closest_brick)
-                    if closest_brick in Collision.bricks: Collision.bricks.remove(closest_brick)
-                    try: self._spawn_particles(closest_brick.rect.centerx, closest_brick.rect.centery) 
-                    except: pass
-                    closest_brick.kill()
+                        try:
+                            self.network.socket_tcp.sendall(b'\x50')
+                        except: pass
                     del self.laser_timers[brick_id] #jam
         
         for p_id, enemy in self.players.items():
