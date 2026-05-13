@@ -58,6 +58,16 @@ class Game:
         self.WIDTH,self.HEIGHT = screen.get_size()
         self.SCREEN = screen
 
+        try:
+            self.heart_full_img = pg.image.load(ROUTE("assets/images/heart_full.png")).convert_alpha()
+            self.heart_full_img = pg.transform.scale(self.heart_full_img, (12, 12))
+            self.heart_empty_img = pg.image.load(ROUTE("assets/images/heart_empty.png")).convert_alpha()
+            self.heart_empty_img = pg.transform.scale(self.heart_empty_img, (12, 12))
+        except Exception as e:
+            print("Warning: Could not load heart images, falling back to circles.", e)
+            self.heart_full_img = None
+            self.heart_empty_img = None
+
         self.tile = TileMap(self.network.lvl_map)
         self.tile_image = self.tile.make_map()
         self.tile_rect = self.tile_image.get_rect()
@@ -320,16 +330,20 @@ class Game:
             pg.draw.rect(self.SCREEN, (255, 0, 0), 
                         (health_x, health_y, current_health_width, health_height))
 #Yu (life indicator)
-            # Indicador de vidas (3 corazones / círculos arriba del nombre)
+            # Indicador de vidas (3 corazones arriba del nombre)
             deaths = getattr(player, 'deaths', 0)
             lives_left = max(0, 3 - deaths)
-            lives_width = 10 * 3 + 4 * 2
+            lives_width = 12 * 3 + 4 * 2
             lives_x = tank_rect.centerx - lives_width // 2
-            lives_y = text_rect.top - 8
+            lives_y = text_rect.top - 14
 
             for i in range(3):
-                color = (0, 255, 0) if i < lives_left else (100, 100, 100)
-                pg.draw.circle(self.SCREEN, color, (lives_x + i * 14 + 5, lives_y), 5)
+                if self.heart_full_img and self.heart_empty_img:
+                    img = self.heart_full_img if i < lives_left else self.heart_empty_img
+                    self.SCREEN.blit(img, (lives_x + i * 16, lives_y))
+                else:
+                    color = (0, 255, 0) if i < lives_left else (100, 100, 100)
+                    pg.draw.circle(self.SCREEN, color, (lives_x + i * 16 + 6, lives_y + 6), 5)
 #Yu (life indicator)
 
         for brick in self._bricks:
