@@ -147,6 +147,13 @@ class Game:
                 start_x = player.rect.centerx + math.sin(rad) * -30
                 start_y = player.rect.centery + math.cos(rad) * -30
                 self._bullets.add(Bullet(start_x, start_y, player.angle_cannon))
+                
+                if player.player_number == self._player_number:
+                    recoil_dist = 10
+                    player.rect.x += int(math.sin(rad) * recoil_dist)
+                    player.rect.y += int(math.cos(rad) * recoil_dist)
+                    player.body_rect.center = player.rect.center
+
                 player.fire = False
 
         self._bullets.update()
@@ -271,7 +278,6 @@ class Game:
                        angle_cannon=player.angle_cannon)
 
             if getattr(player, "laser_active", False):
-                import math
                 rad_angle = math.radians(-player.angle_cannon - 90)
                 
                 barrel_offset = 20 

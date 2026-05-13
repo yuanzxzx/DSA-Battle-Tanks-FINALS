@@ -151,7 +151,12 @@ class NetworkComponent:
                     check_name = check_name[:Struct.BUFFER_SIZE_NAME]
                 check_name = check_name + struct.pack('B', 0)
                 sock.send(check_name)
-                return sock.recv(1) == Struct.OK_MESSAGE
+                res = sock.recv(1) == Struct.OK_MESSAGE
+                try:
+                    sock.close()
+                except Exception:
+                    pass
+                return res
 
         except socket.error as e:
             return e
