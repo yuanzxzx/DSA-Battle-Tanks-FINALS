@@ -26,9 +26,13 @@ type_guns = {
 pg.mixer.init()
 SOUND_BOOM = pg.mixer.Sound(ROUTE("assets/sound/boom.wav"))
 SHOT = pg.mixer.Sound(ROUTE("assets/sound/shot.wav"))
+SHOTGUN = pg.mixer.Sound(ROUTE("assets/sound/shotgun_fx.mp3")) # lars
+LASER = pg.mixer.Sound(ROUTE("assets/sound/laser_sfx.mp3")) # lars
 
 SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
+SHOTGUN.set_volume(0.3) # lars
+LASER.set_volume(0.1) # lars
 
 
 def find_sprite(rect: pg.Rect, group: pg.sprite.Group) -> Union[pg.sprite.Sprite, bool]:
@@ -288,7 +292,44 @@ class Game:
             tank_rect = self.camera.apply(player)
             tank_cover(player.tank_color, tank_rect, self.SCREEN, angle=player.angle,
                        angle_cannon=player.angle_cannon)
+            dt = 1/60
+        for p_id, p in self.players.items():
+            # Initialize energy if they don't have it yet
+            if not hasattr(p, "energy"):
+                p.energy = 100.0
+                p.max_energy = 100.0
 
+            if getattr(p, "laser_active", False):
+                # Drain energy (Lasts ~3 seconds of continuous fire)
+                p.energy -= 35.0 * dt
+                
+                # lars - play laser sound only for the player who is firing, and ensure it loops while active
+                if p.player_number == self._player_number:
+                    # If the sound isn't already playing on a channel, start it looping
+                    if not pg.mixer.Channel(7).get_busy(): 
+                        pg.mixer.Channel(7).play(LASER, loops=-1)
+                  
+                if p.energy <= 0:
+                    p.energy = 0
+                    
+                    # If it is YOUR tank that ran out of energy, force the laser off!
+                    if p.player_number == self._player_number:
+                        p.laser_active = False
+                        pg.mixer.Channel(7).stop() # lars - stop the sound immediately when laser turns off
+                        if self.network:
+                            try: self.network.socket_tcp.sendall(Struct.LASER_OFF_EVENT)
+                            except: pass
+            else:
+                # Recharge energy when laser is off (Takes ~6.5 seconds to fully refill)
+                if p.energy < p.max_energy:
+                    p.energy += 15.0 * dt  
+                
+                # lars - ensure laser sound is stopped when not active
+                if p.player_number == self._player_number:
+                    pg.mixer.Channel(7).stop()
+                    
+                    if p.energy > p.max_energy:
+                        p.energy = p.max_energy
             if getattr(player, "laser_active", False):
               # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
                 rad_angle = math.radians(-player.angle_cannon - 90)
@@ -396,6 +437,7 @@ class Game:
 
     def return_to_menu(self):
         """ Cleanly restarts the client to return to the main menu """
+        pg.mixer.Channel(7).stop() # lars - stop any looping laser sound immediately on menu return
         if self.network:
             try:
                 self.network.socket_tcp.send(Struct.CLOSE_CONN)
