@@ -326,18 +326,40 @@ class Game:
                   #  self.camera.shake() #zmon
      
         if getattr(self.player, "laser_active", False):
-            dt = 1/60 
-            hits = Collision.get_laser_intersections(self.player.telescopic_sight(), 300)
+            rad_angle = math.radians(-self.player.angle_cannon - 90)
+            world_start = (self.player.rect.centerx, self.player.rect.centery)
+            world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
             
-            for brick in hits.get("bricks", []):
-                brick_id = f"brick_{brick.rect.x}_{brick.rect.y}"
+            closest_brick = None
+            closest_dist = 300
+            
+            # Find the first brick in the path
+            for brick in self._bricks:
+                clip = brick.rect.clipline(world_start, world_max_end)
+                if clip:
+                    dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                    if dist < closest_dist:
+                        closest_dist = dist
+                        closest_brick = brick
+                        
+            if closest_brick:
+                dt = 1/60 
+                brick_id = f"brick_{closest_brick.rect.x}_{closest_brick.rect.y}"
                 self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
+                
                 if self.laser_timers[brick_id] >= 1.0:
-                    if brick in self._bricks: self._bricks.remove(brick)
-                    if brick in Collision.bricks: Collision.bricks.remove(brick)
-                    self._spawn_particles(brick.rect.centerx, brick.rect.centery)
-                    brick.kill()
-                    del self.laser_timers[brick_id]
+                    if self.network:
+                        melt_packet = Struct.pack_tile({
+                            "type": Struct.BROKE_BRICK, "x": closest_brick.rect.x, "y": closest_brick.rect.y, "w": closest_brick.rect.w, "h": closest_brick.rect.h
+                        })
+                        self.network.send_move_tcp(melt_packet)
+                    
+                    if closest_brick in self._bricks: self._bricks.remove(closest_brick)
+                    if closest_brick in Collision.bricks: Collision.bricks.remove(closest_brick)
+                    try: self._spawn_particles(closest_brick.rect.centerx, closest_brick.rect.centery) 
+                    except: pass
+                    closest_brick.kill()
+                    del self.laser_timers[brick_id] #jam
         
         for p_id, enemy in self.players.items():
             if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
