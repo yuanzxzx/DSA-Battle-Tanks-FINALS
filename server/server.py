@@ -99,10 +99,9 @@ class Server:
 
 
     def _get_position(self,current) -> tuple:
-        if self.positions.get(current) is None:
-            return 323,677
-
-        return self.positions.get(current)
+        if Collision.positions:
+            return Collision.positions[current % len(Collision.positions)]
+        return 323,677
 
 
     def _handle_menu(self):

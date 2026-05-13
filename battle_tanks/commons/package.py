@@ -17,7 +17,7 @@ class Struct:
         Class for packing and unpacking data
     """
     SIZE_PLAYER = 12 + 1 # ADD 1 FOR SIZE
-    MAX_PLAYERS = 2
+    MAX_PLAYERS = 4
     BUFFER_SIZE_PLAYER = 100
     BUFFER_SIZE_EVENT_RESPONSE = 11 # ADD 1 FOR SIZE
     BUFFER_SPLIT_MAP = BUFFER_SIZE_EVENT_RESPONSE * 8
