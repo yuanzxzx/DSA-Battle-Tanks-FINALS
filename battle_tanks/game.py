@@ -12,7 +12,7 @@ from battle_tanks.components.movement import MovementComponent
 from battle_tanks.components.tile_map import TileMap
 from battle_tanks.components.camera import CameraComponent
 from battle_tanks.sprites import Player, Brick
-from battle_tanks.sprites.elements import Bullet #zmon
+from battle_tanks.sprites.elements import Bullet, Landmine #zmon
 from battle_tanks.commons.municion import CannonType
 from battle_tanks.commons.tank_surface import tank_cover
 from battle_tanks.components.network import NetworkComponent
@@ -88,9 +88,11 @@ class Game:
         self.players: Dict[int,Player] = {}
         self._bricks = pg.sprite.Group()
         self._bullets = pg.sprite.Group()
+        self._landmines = pg.sprite.Group()
         self._damage = 0
 
         self.last_shot_time = -10000 # Pacinio - track last shot time for cooldowns
+        self.last_landmine_spawn = 0  # Track time for landmine spawning
 
         self.laser_timers = {}
         self.laser_burn_cooldown = 0 #jam
@@ -153,6 +155,23 @@ class Game:
             if data_sprite[0] == Struct.BRICK:
                 brick = Brick(data_sprite[1],data_sprite[2],data_sprite[3],data_sprite[4])
                 self._bricks.add(brick)
+
+    def find_safe_spawn_location(self):
+        """Find a location to spawn landmine that doesn't collide with bricks"""
+        import random
+        for _ in range(20):
+            x = random.randint(100, self.tile.WIDTH - 100)
+            y = random.randint(100, self.tile.HEIGHT - 100)        
+            test_rect = pg.Rect(x, y, 16, 16)
+            collision = False
+            for brick in self._bricks:
+                if test_rect.colliderect(brick.rect):
+                    collision = True
+                    break
+            if not collision:
+                return (x, y)
+        # Fallback if no safe location found
+        return (random.randint(100, self.tile.WIDTH - 100), random.randint(100, self.tile.HEIGHT - 100))
 
 
     def update(self):
@@ -246,12 +265,59 @@ class Game:
 
         self._bullets.update()
         for bullet in list(self._bullets):
+            hit_landmine = False
+            for landmine in list(self._landmines):
+                if landmine.rect.colliderect(bullet.rect) and landmine.is_active:
+                    SOUND_BOOM.play()
+                    for p_id, player in self.players.items():
+                        dist = math.hypot(player.rect.centerx - landmine.rect.centerx,
+                                        player.rect.centery - landmine.rect.centery)
+                        if dist <= landmine.explosion_radius:
+                            if self.network and player.player_number == self._player_number:
+                                dmg_packet = Struct.pack_tile({
+                                    "type": 97, "x": self._player_number, "y": 5, "w": 0, "h": 0
+                                })
+                                self.network.send_move_tcp(dmg_packet)
+                    landmine.kill()
+                    bullet.kill()
+                    hit_landmine = True
+                    break
+            
+            if hit_landmine:
+                continue
+            
             if find_sprite(bullet.rect, self._bricks):
                 bullet.kill()
                 continue
+            
+            # Then check player collisions
             for p_id, p in self.players.items():
                 if getattr(bullet, 'owner', None) != p and p.rect.colliderect(bullet.rect):
                     bullet.kill()
+                    break
+        
+        # Spawn landmines every 5 seconds
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_landmine_spawn >= 5000:  
+            spawn_pos = self.find_safe_spawn_location()
+            landmine = Landmine(spawn_pos[0], spawn_pos[1])
+            self._landmines.add(landmine)
+            self.last_landmine_spawn = current_time
+        
+        # Update landmines
+        self._landmines.update()
+        
+        # Check landmine collisions with players
+        for landmine in list(self._landmines):
+            for p_id, player in self.players.items():
+                if landmine.rect.colliderect(player.rect) and landmine.is_active:
+                    SOUND_BOOM.play()
+                    if self.network:
+                        dmg_packet = Struct.pack_tile({
+                            "type": 97, "x": player.player_number, "y": 50, "w": 0, "h": 0
+                        })
+                        self.network.send_move_tcp(dmg_packet)
+                    landmine.kill()
                     break
         
         """ SEND MOVES BYTES """
@@ -340,7 +406,6 @@ class Game:
             closest_brick = None
             closest_dist = 300
 
-            # Find the first brick in the path
             for brick in self._bricks:
                 clip = brick.rect.clipline(world_start, world_max_end)
                 if clip:
@@ -356,14 +421,10 @@ class Game:
 
                 if self.laser_timers[brick_id] >= 1.0:
                     if self.network:
-                        # Send the tiny 1-byte command to the Server!
                         try:
                             self.network.socket_tcp.sendall(b'\x50')
                         except: pass
-                    
-                    # We don't delete the wall manually anymore! 
-                    # The server will instantly reply with the exact same BROKE_BRICK packet a bullet uses,
-                    # and the client's receiving loop will play the sound and delete the wall perfectly!
+    
                     del self.laser_timers[brick_id] #jam
         
         for p_id, enemy in self.players.items():
@@ -535,6 +596,13 @@ class Game:
         for bullet in self._bullets:
             self.SCREEN.blit(bullet.image, self.camera.apply(bullet))
             #zmon
+        
+        #landmines
+        for landmine in self._landmines:
+            landmine_rect = self.camera.apply(landmine)
+            self.SCREEN.blit(landmine.image, landmine_rect)
+            if landmine.is_active:
+                pg.draw.circle(self.SCREEN, (255, 0, 0), landmine_rect.center, landmine.explosion_radius, 1)
 #kca
         # Render Fog of War over map and players
         self.fog.fill(self.FOG_COLOR)
