@@ -412,55 +412,71 @@ class Game:
             world_start = (self.player.rect.centerx, self.player.rect.centery)
             world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
             
-            closest_brick = None
             closest_dist = 300
+            hit_coord = None
+            closest_obj_type = None
+            closest_target = None 
 
+            # 1. ENEMY TANKS (Inflated massively by 25px to defeat network lag!)
+            for p_id, target in self.players.items():
+                if target != self.player and getattr(target, 'deaths', 0) < 3:
+                    clip = target.rect.inflate(25, 25).clipline(world_start, world_max_end)
+                    if clip:
+                        dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                        if dist < closest_dist:
+                            closest_dist = dist
+                            hit_coord = clip[0] 
+                            closest_obj_type = "player"
+                            closest_target = p_id 
+
+            # 2. BRICKS
             for brick in self._bricks:
                 clip = brick.rect.clipline(world_start, world_max_end)
                 if clip:
                     dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
                     if dist < closest_dist:
                         closest_dist = dist
-                        closest_brick = brick
-                        
-                        # Pacinio
-                        hit_x, hit_y = clip[0]
-                        self._spawn_laser_hit(hit_x, hit_y)
-                        # Pacinio
+                        hit_coord = clip[0] 
+                        closest_obj_type = "brick"
+                        closest_target = brick
 
-            if closest_brick:
-                dt = 1/60 
-                brick_id = f"brick_{closest_brick.rect.x}_{closest_brick.rect.y}"
-                self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
+            # -> SAVE EXACT DISTANCE FOR THE VISUAL RED LINE
+            self.player.laser_render_dist = closest_dist
 
-                if self.laser_timers[brick_id] >= 1.0:
-                    self._update_particles(1/60) # Pacinio
+            # 3. Spawn Particles
+            if hit_coord:
+                self._spawn_laser_hit(hit_coord[0], hit_coord[1])
+            
+            # 4. DAMAGE LOGIC - Send damage packet now that server has larger recv buffer
+            if closest_obj_type == "player" and closest_target is not None:
+                if getattr(self, "laser_burn_cooldown", 0) <= 0:
                     if self.network:
                         try:
-                            self.network.socket_tcp.sendall(b'\x50')
-                        except: pass
-    
-                    del self.laser_timers[brick_id] #jam
-        
-        for p_id, enemy in self.players.items():
-            if enemy.player_number != self._player_number and getattr(enemy, "laser_active", False):
-                rad_angle = math.radians(-enemy.angle_cannon - 90)
-                start_pos = (enemy.rect.centerx, enemy.rect.centery)
-                end_pos = (start_pos[0] + 300 * math.cos(rad_angle), start_pos[1] + 300 * math.sin(rad_angle))
-                if self.player.rect.clipline(start_pos, end_pos):
-                    if getattr(self, "laser_burn_cooldown", 0) <= 0:
-                        if self.network:
-                            dmg_packet = Struct.pack_tile({
-                                "type": 97, "x": self._player_number, "y": 10, "w": 0, "h": 0
-                            })
+                            # Send as bytes: [type][target_id][damage]
+                            dmg_packet = bytes([97, int(closest_target), 10])
                             self.network.send_move_tcp(dmg_packet)
-                        self.laser_burn_cooldown = 15 # Take damage every 1/4 second
-                        self._spawn_particles(self.player.rect.centerx, self.player.rect.centery, count=5)
-        
+                        except Exception: 
+                            pass
+                    self.laser_burn_cooldown = 2  # Send every 2 frames for frequent hits
+
+            # 5. BRICKS
+            elif closest_obj_type == "brick" and closest_target:
+                dt = 1/60 
+                brick_id = f"brick_{closest_target.rect.x}_{closest_target.rect.y}"
+                self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
+                if self.laser_timers[brick_id] >= 1.0:
+                    if self.network:
+                        try: self.network.socket_tcp.sendall(b'\x50')
+                        except: pass
+                    del self.laser_timers[brick_id]
+        else:
+            self.player.laser_render_dist = 300 # Reset when not firing
+
+        self._update_particles(1/60)
+
         if getattr(self, "laser_burn_cooldown", 0) > 0:
             self.laser_burn_cooldown -= 1
 
-        self._update_particles(1/60)
         self.camera.update(self.player) #jam
 
     # Pacinio
@@ -574,21 +590,12 @@ class Game:
                         p.energy = p.max_energy
 
             if getattr(p, "laser_active", False):
-              # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
                 rad_angle = math.radians(-p.angle_cannon - 90)
                 barrel_offset = 20 
                 
-                world_start = (p.rect.centerx, p.rect.centery)
-                world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
+                # Fetch the exact collision distance we calculated in update()!
+                closest_dist = getattr(p, "laser_render_dist", 300)
                 
-                closest_dist = 300
-                for brick in self._bricks:
-                    clip = brick.rect.clipline(world_start, world_max_end)
-                    if clip:
-                        dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
-                        if dist < closest_dist:
-                            closest_dist = dist
-                            
                 draw_len = max(0, closest_dist - barrel_offset)
                 start_x = tank_rect.centerx + barrel_offset * math.cos(rad_angle)
                 start_y = tank_rect.centery + barrel_offset * math.sin(rad_angle)
