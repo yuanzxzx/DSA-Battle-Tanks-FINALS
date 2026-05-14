@@ -55,6 +55,9 @@ class Struct:
     PLAYER_SHOT: int = 7
     PLAYER_FIRED: int = 8
     PLAYER_SHOTGUN: int = 9
+    MINE_SPAWN: int = 10
+    LASER_ON_REMOTE: int = 11
+    LASER_OFF_REMOTE: int = 12
 
     # Aggregate valid status codes to validate network payloads
     STATUS_PLAYER: List[int] = [
