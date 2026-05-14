@@ -423,45 +423,48 @@ class Game:
                     Brick.boom() #Change for Block sound
                   #  self.camera.shake() #zmon
      
+        # Calculate laser distances for all players with active lasers
+        for p_id, p in self.players.items():
+            if getattr(p, "laser_active", False):
+                dist, hit_coord = self.calculate_laser_distance(p)
+                p.laser_render_dist = dist
+                if p == self.player and hit_coord:
+                    self._spawn_laser_hit(hit_coord[0], hit_coord[1])
+            else:
+                p.laser_render_dist = 300  # Reset when not firing
+
+        # Handle damage and brick destruction only for local player
         if getattr(self.player, "laser_active", False):
+            closest_dist, hit_coord = self.calculate_laser_distance(self.player)
+            closest_obj_type = None
+            closest_target = None
+            
+            # Re-determine what was hit for damage logic
             rad_angle = math.radians(-self.player.angle_cannon - 90)
             world_start = (self.player.rect.centerx, self.player.rect.centery)
             world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
             
-            closest_dist = 300
-            hit_coord = None
-            closest_obj_type = None
-            closest_target = None 
-
-            # 1. ENEMY TANKS (Inflated massively by 25px to defeat network lag!)
+            # Find closest player
             for p_id, target in self.players.items():
                 if target != self.player and getattr(target, 'deaths', 0) < 3:
                     clip = target.rect.inflate(25, 25).clipline(world_start, world_max_end)
                     if clip:
                         dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
-                        if dist < closest_dist:
-                            closest_dist = dist
-                            hit_coord = clip[0] 
+                        if dist <= closest_dist + 1:  # Allow small tolerance
                             closest_obj_type = "player"
-                            closest_target = p_id 
-
-            # 2. BRICKS
-            for brick in self._bricks:
-                clip = brick.rect.clipline(world_start, world_max_end)
-                if clip:
-                    dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
-                    if dist < closest_dist:
-                        closest_dist = dist
-                        hit_coord = clip[0] 
-                        closest_obj_type = "brick"
-                        closest_target = brick
-
-            # -> SAVE EXACT DISTANCE FOR THE VISUAL RED LINE
-            self.player.laser_render_dist = closest_dist
-
-            # 3. Spawn Particles
-            if hit_coord:
-                self._spawn_laser_hit(hit_coord[0], hit_coord[1])
+                            closest_target = p_id
+                            break
+            
+            # Find closest brick
+            if not closest_obj_type:
+                for brick in self._bricks:
+                    clip = brick.rect.clipline(world_start, world_max_end)
+                    if clip:
+                        dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                        if dist <= closest_dist + 1:  # Allow small tolerance
+                            closest_obj_type = "brick"
+                            closest_target = brick
+                            break
             
             # 4. DAMAGE LOGIC - Send damage packet now that server has larger recv buffer
             if closest_obj_type == "player" and closest_target is not None:
@@ -485,15 +488,41 @@ class Game:
                         try: self.network.socket_tcp.sendall(b'\x50')
                         except: pass
                     del self.laser_timers[brick_id]
-        else:
-            self.player.laser_render_dist = 300 # Reset when not firing
 
         self._update_particles(1/60)
 
         if getattr(self, "laser_burn_cooldown", 0) > 0:
             self.laser_burn_cooldown -= 1
 
-        self.camera.update(self.player) #jam
+    def calculate_laser_distance(self, player):
+        """Calculate the laser collision distance for a given player."""
+        rad_angle = math.radians(-player.angle_cannon - 90)
+        world_start = (player.rect.centerx, player.rect.centery)
+        world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
+        
+        closest_dist = 300
+        hit_coord = None
+
+        # 1. ENEMY TANKS (Inflated massively by 25px to defeat network lag!)
+        for p_id, target in self.players.items():
+            if target != player and getattr(target, 'deaths', 0) < 3:
+                clip = target.rect.inflate(25, 25).clipline(world_start, world_max_end)
+                if clip:
+                    dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                    if dist < closest_dist:
+                        closest_dist = dist
+                        hit_coord = clip[0]
+
+        # 2. BRICKS
+        for brick in self._bricks:
+            clip = brick.rect.clipline(world_start, world_max_end)
+            if clip:
+                dist = math.hypot(clip[0][0] - world_start[0], clip[0][1] - world_start[1])
+                if dist < closest_dist:
+                    closest_dist = dist
+                    hit_coord = clip[0]
+
+        return closest_dist, hit_coord
 
     # Pacinio
     def _spawn_debris(self, x, y, count=12):

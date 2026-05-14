@@ -39,7 +39,7 @@ def main():
     """ Client game of server"""
 
     pg.display.set_caption(f"Battle Tank") # Set the title of the window
-    pg.display.set_icon(pg.image.load(ROUTE("lemon.ico"))) # Set the icon of the window
+    pg.display.set_icon(pg.image.load(ROUTE("assets/images/lemon.ico"))) # Set the icon of the window
     pg.font.init() # Initialize the font
     pg.event.set_allowed([ # Set the events allowed
         pg.QUIT, 
