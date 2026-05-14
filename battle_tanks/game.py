@@ -29,11 +29,13 @@ SOUND_BOOM = pg.mixer.Sound(ROUTE("assets/sound/boom.wav"))
 SHOT = pg.mixer.Sound(ROUTE("assets/sound/shot.wav"))
 SHOTGUN = pg.mixer.Sound(ROUTE("assets/sound/shotgun_fx.mp3")) # lars
 LASER = pg.mixer.Sound(ROUTE("assets/sound/laser_sfx.mp3")) # lars
+MINE = pg.mixer.Sound(ROUTE("assets/sound/landmine_sfx.mp3")) # lars
 
 SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
 SHOTGUN.set_volume(0.3) # lars
 LASER.set_volume(0.3) # lars
+MINE.set_volume(0.3) # lars
 
 playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
@@ -280,7 +282,7 @@ class Game:
             hit_landmine = False
             for landmine in list(self._landmines):
                 if landmine.rect.colliderect(bullet.rect) and landmine.is_active:
-                    SOUND_BOOM.play()
+                    MINE.play()
                     for p_id, player in self.players.items():
                         dist = math.hypot(player.rect.centerx - landmine.rect.centerx,
                                         player.rect.centery - landmine.rect.centery)
@@ -324,7 +326,7 @@ class Game:
         for landmine in list(self._landmines):
             for p_id, player in self.players.items():
                 if landmine.rect.colliderect(player.rect) and landmine.is_active:
-                    SOUND_BOOM.play()
+                    MINE.play()
                     if self.network:
                         # Send damage packet: type=97, target_id=player_number, damage=25
                         dmg_packet = bytes([97, player.player_number, 25])
