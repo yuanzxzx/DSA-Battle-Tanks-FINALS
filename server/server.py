@@ -482,6 +482,20 @@ class Server:
                             packets = Collision.update_bullets()
                             for packet in packets:
                                 q.put(packet)
+                            for p_data in self._data.values():
+                                if "energy" not in p_data: 
+                                    p_data["energy"] = 100.0
+                                
+                                if p_data.get("laser_active"):
+                                    p_data["energy"] -= 35.0 * TICK_RATE
+                                    if p_data["energy"] <= 0:
+                                        p_data["energy"] = 0
+                                        p_data["laser_active"] = False 
+                                else:
+
+                                    p_data["energy"] = min(100.0, p_data["energy"] + 15.0 * TICK_RATE)
+                            for conn in self._sockets:
+                                self._executor.submit(send_data, conn, Struct.pack_players(self._data)) #jam
 
                             # ==========================================
                             # --- NATIVE SERVER-SIDE LASER DESTRUCTION ---
