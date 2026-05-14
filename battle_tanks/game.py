@@ -723,7 +723,13 @@ class Game:
             alpha = int(255 * max(0, particle["life"] / 0.8))
             surf = pg.Surface((particle["radius"]*2, particle["radius"]*2), pg.SRCALPHA)
             pg.draw.circle(surf, (*color, alpha), (particle["radius"], particle["radius"]), particle["radius"])
-            self.SCREEN.blit(surf, (particle["pos"][0] - particle["radius"], particle["pos"][1] - particle["radius"]))
+            particle_rect = pg.Rect(
+                particle["pos"][0] - particle["radius"],
+                particle["pos"][1] - particle["radius"],
+                particle["radius"] * 2,
+                particle["radius"] * 2
+            )
+            self.SCREEN.blit(surf, self.camera.apply_rect(particle_rect).topleft)
 
         if self.laser_hit_point:
             hit_screen = self.camera.apply_rect(pg.Rect(self.laser_hit_point[0], self.laser_hit_point[1], 1, 1))
