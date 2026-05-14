@@ -64,3 +64,35 @@ class Bullet(pg.sprite.Sprite):
         if self.distance_traveled >= self.max_distance:
             self.kill()
 #zmon
+
+class Landmine(pg.sprite.Sprite)
+    def __init__(self, x, y, explosion_radius=60):
+        super().__init__()
+        self.x = float(x)
+        self.y = float(y)
+        self.explosion_radius = explosion_radius
+        self.is_active = False
+        self.activation_time = 0
+        self.activation_delay = 0.5  # 0.5 seconds before it's active
+        
+
+        self.image = pg.Surface((16, 16), pg.SRCALPHA)
+        pg.draw.circle(self.image, (139, 0, 0), (8, 8), 8)  
+        pg.draw.polygon(self.image, (255, 0, 0), [(8, 0), (10, 6), (6, 6)])  
+        
+        self.rect = self.image.get_rect(center=(x, y))
+
+    def activate(self):
+        """Activate the landmine after delay"""
+        self.activation_time += 1/60
+        if self.activation_time >= self.activation_delay:
+            self.is_active = True
+
+    def update(self):
+        """Update landmine activation state"""
+        if not self.is_active:
+            self.activate()
+
+    def detonate(self):
+        """Trigger the landmine explosion"""
+        return self.explosion_radius  # Return radius for damage calculation
