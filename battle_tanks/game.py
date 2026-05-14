@@ -29,13 +29,11 @@ SOUND_BOOM = pg.mixer.Sound(ROUTE("assets/sound/boom.wav"))
 SHOT = pg.mixer.Sound(ROUTE("assets/sound/shot.wav"))
 SHOTGUN = pg.mixer.Sound(ROUTE("assets/sound/shotgun_fx.mp3")) # lars
 LASER = pg.mixer.Sound(ROUTE("assets/sound/laser_sfx.mp3")) # lars
-MINE = pg.mixer.Sound(ROUTE("assets/sound/landmine_sfx.mp3")) # lars
 
 SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
 SHOTGUN.set_volume(0.3) # lars
 LASER.set_volume(0.3) # lars
-MINE.set_volume(0.3) # lars
 
 playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
@@ -282,7 +280,7 @@ class Game:
             hit_landmine = False
             for landmine in list(self._landmines):
                 if landmine.rect.colliderect(bullet.rect) and landmine.is_active:
-                    MINE.play()
+                    SOUND_BOOM.play()
                     for p_id, player in self.players.items():
                         dist = math.hypot(player.rect.centerx - landmine.rect.centerx,
                                         player.rect.centery - landmine.rect.centery)
@@ -310,15 +308,16 @@ class Game:
                     bullet.kill()
                     break
         
-        # Spawn landmines every 5 seconds
-        current_time = pg.time.get_ticks()
-        if current_time - self.last_landmine_spawn >= 5000:  
-            spawn_pos = self.find_safe_spawn_location(self.landmine_spawn_count)
-            landmine = Landmine(spawn_pos[0], spawn_pos[1])
-            self._landmines.add(landmine)
-            self.landmine_spawn_count += 1  # Increment for next spawn
-            self.last_landmine_spawn = current_time
-        
+        # Spawn landmines every 5 seconds only in local mode.
+        if not self.network:
+            current_time = pg.time.get_ticks()
+            if current_time - self.last_landmine_spawn >= 5000:  
+                spawn_pos = self.find_safe_spawn_location(self.landmine_spawn_count)
+                landmine = Landmine(spawn_pos[0], spawn_pos[1])
+                self._landmines.add(landmine)
+                self.landmine_spawn_count += 1  # Increment for next spawn
+                self.last_landmine_spawn = current_time
+
         # Update landmines
         self._landmines.update()
         
@@ -326,7 +325,7 @@ class Game:
         for landmine in list(self._landmines):
             for p_id, player in self.players.items():
                 if landmine.rect.colliderect(player.rect) and landmine.is_active:
-                    MINE.play()
+                    SOUND_BOOM.play()
                     if self.network:
                         # Send damage packet: type=97, target_id=player_number, damage=25
                         dmg_packet = bytes([97, player.player_number, 25])
@@ -349,12 +348,24 @@ class Game:
                     player = Player((recv["x"],recv["y"]), position, cannon_type = copy.deepcopy(type_guns.get("BASIC")), tank_color=tank_color)
                     player.name = recv.get("name", f"Player {position}")  # Establecer el nombre del jugador
                     self.players[position] = player
-                #zmon
+
+                elif recv.get("status") == Struct.MINE_SPAWN:
+                    mine = Landmine(recv["x"], recv["y"])
+                    self._landmines.add(mine)
+
+                elif recv.get("status") == Struct.LASER_ON_REMOTE:
+                    position = recv.get("position")
+                    if self.players.get(position):
+                        self.players[position].laser_active = True
+
+                elif recv.get("status") == Struct.LASER_OFF_REMOTE:
+                    position = recv.get("position")
+                    if self.players.get(position):
+                        self.players[position].laser_active = False
+
                 elif recv.get("status") in (Struct.UPDATE_PLAYER, Struct.PLAYER_SHOT, Struct.PLAYER_FIRED, Struct.PLAYER_SHOTGUN):
                     position = recv["position"]
-                 #zmon   
                     if recv.get("status") == Struct.PLAYER_SHOT:
-                #        self.camera.shake()
                         SOUND_BOOM.play()
                     elif recv.get("status") == Struct.PLAYER_FIRED:
                         if position != self._player_number and self.players.get(position):
@@ -363,7 +374,6 @@ class Game:
                         if position != self._player_number and self.players.get(position):
                             self.players[position].shotgun_fire = True
 
-                #zmon
                     if self.players.get(position):
                         player = self.players[position]
 
