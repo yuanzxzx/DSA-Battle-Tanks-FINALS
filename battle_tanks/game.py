@@ -564,6 +564,7 @@ class Game:
 
     def draw(self, main_screen: pg.Surface):
         """ Draw the player and scene. """
+        self.camera.update(self.player)
         self.SCREEN.blit(self.tile_image,self.camera.apply_rect(self.tile_rect))
 #kca
         for _,player in self.players.items():
