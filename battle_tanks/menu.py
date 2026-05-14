@@ -428,33 +428,3 @@ class Menu:
             pg.display.flip()
             self.clock.tick(60)
 
-
-    def single_local_mode(self) -> Game:
-        """ Single local game """
-        return Game(None, self.main_surface, "John", self.selected_tank_color)
-
-
-    def update(self, main_game) -> Game:
-        """Go directly to multiplayer mode."""
-        return self.multiplayer_mode(main_game)
-
-
-    def draw(self):
-        """ Draw options"""
-        self.main_surface.blit(self.background_image, (0, 0))
-        
-        mouse_pos = pg.mouse.get_pos()
-
-        for op, values in self.options.items():
-            op_draw = values.get("text_draw")
-            
-            # Highlight option if mouse is hovering over it or keyboard selected
-            if op_draw._rect.collidepoint(mouse_pos) or self.position == op:
-                op_draw.color = (255, 255, 255)
-                if op_draw._rect.collidepoint(mouse_pos):
-                    self.position = op
-            else:
-                op_draw.color = NEU
-
-            op_draw.update()
-            op_draw.draw(self.main_surface)
