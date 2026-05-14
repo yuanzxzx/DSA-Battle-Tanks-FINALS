@@ -10,155 +10,152 @@ from battle_tanks.sprites.player import Player
 class Struct:
     
     # Establish byte boundaries and capacity limits for network synchronization
-    SIZE_PLAYER: int = 13
-    MAX_PLAYERS: int = 4
-    BUFFER_SIZE_PLAYER: int = 100
-    BUFFER_SIZE_EVENT_RESPONSE: int = 11
-    BUFFER_SPLIT_MAP: int = 88
-    BUFFER_SIZE_LVL_MAP: int = 40
-    BUFFER_SIZE_INIT_PLAYER: int = 4
+    SIZE_PLAYER: int = 13 #Size of player data
+    MAX_PLAYERS: int = 4 #Maximum number of players
+    BUFFER_SIZE_PLAYER: int = 100 #Size of player buffer
+    BUFFER_SIZE_EVENT_RESPONSE: int = 11 #Size of event response buffer
+    BUFFER_SPLIT_MAP: int = 88 #Size of map buffer
+    BUFFER_SIZE_LVL_MAP: int = 40 #Size of level map buffer
+    BUFFER_SIZE_INIT_PLAYER: int = 4 #Size of initial player buffer
     BUFFER_SIZE_EVENT: int = 32  # Increased from 1 to handle multi-byte events (LASER_OFF_EVENT=5, damage packets=3)
-    BUFFER_SIZE_NAME: int = 32
+    BUFFER_SIZE_NAME: int = 32 #Size of name buffer
     
     # Pre-define connection status codes to streamline server responses
-    OK_MESSAGE: bytes = b'\x01'
-    JOIN_MESSAGE: bytes = b'\x02'
-    USER_NOT_AVAILABLE: bytes = b'\x09'
-    CLOSE_CONN: bytes = b'\x10'
+    OK_MESSAGE: bytes = b'\x01' #OK message
+    JOIN_MESSAGE: bytes = b'\x02' #Join message
+    USER_NOT_AVAILABLE: bytes = b'\x09' #User not available message
+    CLOSE_CONN: bytes = b'\x10' #Close connection message
 
     # Map directional actions to byte signatures to minimize payload footprint
-    LEFT_EVENT_PLAYER: bytes = b'\x03'
-    RIGHT_EVENT_PLAYER: bytes = b'\x04'
-    UP_EVENT_PLAYER: bytes = b'\x05'
-    DOWN_EVENT_PLAYER: bytes = b'\x06'
-    SHOOT_EVENT_PLAYER: bytes = b'\x06'
+    LEFT_EVENT_PLAYER: bytes = b'\x03' #Left event player
+    RIGHT_EVENT_PLAYER: bytes = b'\x04' #Right event player
+    UP_EVENT_PLAYER: bytes = b'\x05' #Up event player
+    DOWN_EVENT_PLAYER: bytes = b'\x06' #Down event player
+    SHOOT_EVENT_PLAYER: bytes = b'\x06' #Shoot event player
 
     # Map turret rotation actions to bytes
-    LEFT_ANGLE_EVENT_PLAYER: bytes = b'\x07'
-    RIGHT_ANGLE_EVENT_PLAYER: bytes = b'\x08'
+    LEFT_ANGLE_EVENT_PLAYER: bytes = b'\x07' #Left angle event player
+    RIGHT_ANGLE_EVENT_PLAYER: bytes = b'\x08' #Right angle event player
 
     # Map weapon-specific firing actions to bytes
-    FIRE_EVENT_PLAYER: bytes = b'\x11'
-    SHOTGUN_EVENT_PLAYER: bytes = b'\x12'
+    FIRE_EVENT_PLAYER: bytes = b'\x11' #Fire event player
+    SHOTGUN_EVENT_PLAYER: bytes = b'\x12' #Shotgun event player
 
     # Toggle events for specific entity states
-    LASER_ON_EVENT: bytes = b"L_ON"
-    LASER_OFF_EVENT: bytes = b"L_OFF"
+    LASER_ON_EVENT: bytes = b"L_ON" #Laser on event
+    LASER_OFF_EVENT: bytes = b"L_OFF" #Laser off event
 
     # Define integers representing player states for state machines
-    UPDATE_PLAYER: int = 1
-    NEW_PLAYER: int = 2
-    OLD_PLAYER: int = 3
-    BROKE_BRICK: int = 4
-    BRICK: int = 5
-    BLOCK: int = 6
-    PLAYER_SHOT: int = 7
-    PLAYER_FIRED: int = 8
-    PLAYER_SHOTGUN: int = 9
-    MINE_SPAWN: int = 10
-    LASER_ON_REMOTE: int = 11
-    LASER_OFF_REMOTE: int = 12
+    UPDATE_PLAYER: int = 1 #Update player
+    NEW_PLAYER: int = 2 #New player
+    OLD_PLAYER: int = 3 #Old player
+    BROKE_BRICK: int = 4 #Broke brick
+    BRICK: int = 5 #Brick
+    BLOCK: int = 6 #Block
+    PLAYER_SHOT: int = 7 #Player shot
+    PLAYER_FIRED: int = 8 #Player fired
+    PLAYER_SHOTGUN: int = 9 #Player shotgun
 
     # Aggregate valid status codes to validate network payloads
-    STATUS_PLAYER: List[int] = [
+    STATUS_PLAYER: List[int] = [ #List of valid player status codes
         UPDATE_PLAYER, NEW_PLAYER, OLD_PLAYER, PLAYER_SHOT, PLAYER_FIRED, PLAYER_SHOTGUN
     ]
 
     # Aggregate valid movement commands to filter incoming data bytes
-    MOVES: List[bytes] = [
+    MOVES: List[bytes] = [ #List of valid movement commands
         LEFT_EVENT_PLAYER, RIGHT_EVENT_PLAYER, UP_EVENT_PLAYER, DOWN_EVENT_PLAYER,
         LEFT_ANGLE_EVENT_PLAYER, RIGHT_ANGLE_EVENT_PLAYER
     ]
 
     # Decode a single byte into a usable python structure
     @staticmethod
-    def unpack_single_data(data: bytes) -> Tuple[Any, ...]:
+    def unpack_single_data(data: bytes) -> Tuple[Any, ...]: #Unpack single byte data
         return struct.unpack('B', data)
 
     # Encode generic single data items for minimal transmission
     @staticmethod
-    def pack_single_data(data: int) -> bytes:
+    def pack_single_data(data: int) -> bytes: #Pack single data
         return struct.pack('B', data)
 
     # Decode a 13-byte array into a player object, ignoring the size byte
     @staticmethod
-    def unpack_player(data: bytes) -> Tuple[Any, ...]:
+    def unpack_player(data: bytes) -> Tuple[Any, ...]: #Unpack player data
         return struct.unpack('BBhhhhbB', data[1:])
 
     # Handle rotational mutations based on specific input commands
     @staticmethod
-    def _apply_rotation(player_data: Dict[str, Any], data: bytes) -> None:
+    def _apply_rotation(player_data: Dict[str, Any], data: bytes) -> None: #Apply rotation
         
         # Determine rotation path based on network command to align visual assets
         if data == Struct.RIGHT_EVENT_PLAYER:
             
             # Rotate both hull and turret together for consistent turning
-            player_data["angle"] += Player.ANGLE * Player.ANGLE_RIGHT
-            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_RIGHT
+            player_data["angle"] += Player.ANGLE * Player.ANGLE_RIGHT #Rotate hull right
+            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_RIGHT #Rotate turret right
             
         elif data == Struct.LEFT_EVENT_PLAYER:
             
             # Shift hull left and turret right to simulate counter-steer
-            player_data["angle"] -= Player.ANGLE * Player.ANGLE_RIGHT
-            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_LEFT
+            player_data["angle"] -= Player.ANGLE * Player.ANGLE_RIGHT #Rotate hull left
+            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_LEFT #Rotate turret left
             
         elif data == Struct.LEFT_ANGLE_EVENT_PLAYER:
             
             # Isolate turret rotation to allow aiming independently of movement
-            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_LEFT
+            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_LEFT #Rotate turret left
             
         elif data == Struct.RIGHT_ANGLE_EVENT_PLAYER:
             
             # Pivot turret rightward independently
-            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_RIGHT
+            player_data["angle_cannon"] += Player.ANGLE * Player.ANGLE_RIGHT #Rotate turret right
 
     # Handle velocity mutations and object collisions based on directional input
     @staticmethod
-    def _apply_translation(player_data: Dict[str, Any], data: bytes) -> None:
+    def _apply_translation(player_data: Dict[str, Any], data: bytes) -> None: #Apply translation of player data
         
         # Convert degrees to radians to compute trigonometric velocities
-        radians: float = math.radians(player_data["angle"])
+        radians: float = math.radians(player_data["angle"]) #Convert degrees to radians for calculations
         
         # Calculate X velocity vector using sine to simulate tank forward momentum
-        vlx: float = Player.SPEED * -math.sin(radians)
+        vlx: float = Player.SPEED * -math.sin(radians) #Calculate X velocity vector
         
         # Calculate Y velocity vector using cosine to map vertical momentum
-        vly: float = Player.SPEED * -math.cos(radians)
+        vly: float = Player.SPEED * -math.cos(radians) #Calculate Y velocity vector
 
         # Apply vectors positively or negatively depending on forward/backward inputs
-        if data == Struct.UP_EVENT_PLAYER:
+        if data == Struct.UP_EVENT_PLAYER: #Check if data is UP_EVENT_PLAYER
             
             # Advance coordinates forward along the current vector
             player_data["y"] += vly
             player_data["x"] += vlx
             
-        elif data == Struct.DOWN_EVENT_PLAYER:
+        elif data == Struct.DOWN_EVENT_PLAYER: #Check if data is DOWN_EVENT_PLAYER
             
             # Reverse coordinates backward against the vector
             player_data["y"] -= vly
             player_data["x"] -= vlx
 
         # Enforce boundary and object restrictions after calculating the new position
-        Collision.collide_with_objects(player_data)
+        Collision.collide_with_objects(player_data) #Check collision with objects
 
     # Conditionally mutate the player dictionary using command bytes
     @staticmethod
-    def _apply_movement_logic(player_data: Dict[str, Any], data: bytes) -> None:
+    def _apply_movement_logic(player_data: Dict[str, Any], data: bytes) -> None: #Apply movement logic
         
         # Evaluate movement command to route to the correct physics handler
         if data in [Struct.LEFT_EVENT_PLAYER, Struct.RIGHT_EVENT_PLAYER, Struct.LEFT_ANGLE_EVENT_PLAYER, Struct.RIGHT_ANGLE_EVENT_PLAYER]:
-            Struct._apply_rotation(player_data, data)
+            Struct._apply_rotation(player_data, data) #Apply rotation
             
         elif data in [Struct.UP_EVENT_PLAYER, Struct.DOWN_EVENT_PLAYER]:
-            Struct._apply_translation(player_data, data)
+            Struct._apply_translation(player_data, data) #Apply translation
 
     # Package all vital player properties into a standardized byte format for transmission
     @staticmethod
-    def pack_player(data: Optional[bytes], player_data: Dict[str, Any], status: Optional[int] = None) -> bytes:
+    def pack_player(data: Optional[bytes], player_data: Dict[str, Any], status: Optional[int] = None) -> bytes: #Pack player data
         
         # Validate and apply physics if a movement command is provided
-        if data in Struct.MOVES:
-            Struct._apply_movement_logic(player_data, data)
+        if data in Struct.MOVES: #Check if data is in MOVES
+            Struct._apply_movement_logic(player_data, data) #Apply movement logic
 
         # Normalize degree values to prevent overflow errors in rendering logic
         player_data["angle"] = player_data["angle"] % 360
@@ -167,22 +164,22 @@ class Struct:
         # Compile final byte string mapping properties to binary format
         return Struct.pack_single_data(Struct.SIZE_PLAYER) + struct.pack(
             'BBhhhhbB',
-            status if status is not None else Struct.UPDATE_PLAYER,
-            player_data["position"],
-            int(player_data["x"]),
-            int(player_data["y"]),
-            int(player_data["angle"]),
-            int(player_data["angle_cannon"]),
-            int(player_data["damage_indicator"]),
-            int(player_data.get("tank_color", 0))
+            status if status is not None else Struct.UPDATE_PLAYER, #Update player status
+            player_data["position"], #Player position
+            int(player_data["x"]), #Player x coordinate
+            int(player_data["y"]), #Player y coordinate
+            int(player_data["angle"]), #Player angle
+            int(player_data["angle_cannon"]), #Player cannon angle
+            int(player_data["damage_indicator"]), #Player damage indicator
+            int(player_data.get("tank_color", 0)) #Player tank color
         )
 
     # Decode mixed data streams into discrete player or event objects by inspecting header bytes
     @staticmethod
-    def unpack_all_data(data: bytes) -> List[Tuple[Any, ...]]:
-        index: int = 0
-        step: int = 0
-        data_wrapped: List[Tuple[Any, ...]] = []
+    def unpack_all_data(data: bytes) -> List[Tuple[Any, ...]]: #Unpack all data
+        index: int = 0 #Index for data
+        step: int = 0 #Step for data
+        data_wrapped: List[Tuple[Any, ...]] = [] #List of unwrapped data
 
         # Iterate over the byte stream to extract all encapsulated records
         while index < len(data):
@@ -207,7 +204,7 @@ class Struct:
                 step += Struct.BUFFER_SIZE_EVENT_RESPONSE
                 
                 # Validate the chunk length prior to unpacking
-                if len(data[index:step]) == Struct.BUFFER_SIZE_EVENT_RESPONSE:
+                if len(data[index:step]) == Struct.BUFFER_SIZE_EVENT_RESPONSE: #Check if chunk length is valid
                     data_wrapped.append(Struct.unpack_event(data[index:step]))
 
                 # Advance index to process remaining stream
@@ -223,34 +220,34 @@ class Struct:
 
     # Extract all serialized player arrays from bulk data transmissions
     @staticmethod
-    def unpack_players(data: bytes) -> List[Tuple[Any, ...]]:
+    def unpack_players(data: bytes) -> List[Tuple[Any, ...]]: #Unpack all players
         players: List[Tuple[Any, ...]] = []
         
         # Branch parsing strategy based on chunk size expectations
-        if len(data) > Struct.BUFFER_SIZE_PLAYER:
+        if len(data) > Struct.BUFFER_SIZE_PLAYER: #Check if data is greater than buffer size
             
             # Slice stream by interval to isolate each individual entity
-            for i in range(0, len(data), Struct.BUFFER_SIZE_PLAYER):
-                players.append(Struct.unpack_player(data[i + 1:i + Struct.BUFFER_SIZE_PLAYER]))
+            for i in range(0, len(data), Struct.BUFFER_SIZE_PLAYER): #Iterate through data
+                players.append(Struct.unpack_player(data[i + 1:i + Struct.BUFFER_SIZE_PLAYER])) #Append player data
                 
-        else:
+        else: #Else data is not greater than buffer size
             
             # Fall back to single decode if stream contains only one entity
-            if len(data) > 0:
+            if len(data) > 0: #Check if data is greater than 0
                 players.append(Struct.unpack_player(data))
 
         return players
 
     # Flatten multiple player dictionaries into a cohesive binary chunk
     @staticmethod
-    def pack_players(data: Dict[int, Dict[str, Any]], status: Optional[int] = None) -> bytes:
+    def pack_players(data: Dict[int, Dict[str, Any]], status: Optional[int] = None) -> bytes: #Pack all players
         
         # Serialize each nested dict sequentially to build the final buffer
         return b"".join([Struct.pack_player(None, item, status) for _, item in data.items()])
 
     # Encode map elements into minimal byte representations to reduce map transfer sizes
     @staticmethod
-    def pack_tile(data: Dict[str, Any]) -> bytes:
+    def pack_tile(data: Dict[str, Any]) -> bytes: #Pack tile data
         
         # Concatenate headers and parameters into a strict sequence
         return Struct.pack_single_data(Struct.BUFFER_SIZE_EVENT_RESPONSE) + struct.pack(
