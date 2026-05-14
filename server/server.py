@@ -268,11 +268,25 @@ class Server:
                             except: pass
                     elif isinstance(data, bytes) and len(data) >= 3:
                         if data[0] == 97:
-                            event = Struct.unpack_event(data)
-                            target_id = event[1]
-                            damage = event[2]
-                            if target_id in self._data:
-                                self._data[target_id]["damage_indicator"] += damage
+                            try:
+                                # Raw byte extraction - impossible to crash
+                                target_id = int(data[1])
+                                damage = int(data[2])
+                                
+                                if target_id in self._data:
+                                    current_dmg = self._data[target_id].get("damage_indicator", 0) + damage
+                                    
+                                    if current_dmg >= 100:
+                                        self._data[target_id]["damage_indicator"] = 0
+                                        respawn_position = Collision.get_respawn_position(
+                                            exclude=(self._data[target_id].get("x", 0), self._data[target_id].get("y", 0))
+                                        )
+                                        self._data[target_id]["x"], self._data[target_id]["y"] = respawn_position
+                                        q.put(Struct.pack_player(None, self._data[target_id], Struct.UPDATE_PLAYER))
+                                    else:
+                                        self._data[target_id]["damage_indicator"] = current_dmg
+                            except Exception:
+                                pass
                                 
                         elif data[0] == Struct.BROKE_BRICK:
                             for conn in self._sockets:
@@ -499,40 +513,17 @@ class Server:
 
                             # ==========================================
                             # --- NATIVE SERVER-SIDE LASER DESTRUCTION ---
+                            # --- NATIVE SERVER-SIDE LASER DESTRUCTION ---
                             for pos, p_data in self._data.items():
+                                if "energy" not in p_data: p_data["energy"] = 100.0
+                                
                                 if p_data.get("laser_active"):
-                                    # Use the exact same hitscan the client uses!
-                                    hits = Collision.get_laser_intersections(p_data, 300)
-                                    if hits.get("bricks"):
-                                        closest_brick = hits["bricks"][0] # Guaranteed closest wall
-                                        p_data.setdefault("laser_timers", {})
-                                        brick_id = f"{closest_brick.rect.x}_{closest_brick.rect.y}"
-                                        p_data["laser_timers"][brick_id] = p_data["laser_timers"].get(brick_id, 0) + TICK_RATE
-
-                                        if p_data["laser_timers"][brick_id] >= 1.0:
-                                            # EXACT SAME DESTRUCTION LOGIC AS BULLETS!
-                                            if hasattr(closest_brick, 'data'):
-                                                list_game_state = Collision.game_state.split(closest_brick.data)
-                                                Collision.game_state = b"".join(map(bytes, list_game_state))
-                                            
-                                            closest_brick.remove(Collision.bricks)
-
-                                            # Send the exact same packet the bullet sends
-                                            try:
-                                                packet = Struct.pack_tile({
-                                                    "type": 5, # 5 is the map loader type for BROKE_BRICK
-                                                    "x": closest_brick.rect.x,
-                                                    "y": closest_brick.rect.y,
-                                                    "w": closest_brick.rect.w,
-                                                    "h": closest_brick.rect.h
-                                                })
-                                                for conn in self._sockets:
-                                                    self._executor.submit(send_data, conn, packet)
-                                            except: pass
-
-                                            p_data["laser_timers"].clear()
+                                    p_data["energy"] -= 35.0 * TICK_RATE
+                                    if p_data["energy"] <= 0:
+                                        p_data["energy"] = 0
+                                        p_data["laser_active"] = False
                                 else:
-                                    if "laser_timers" in p_data: p_data["laser_timers"].clear()
+                                    p_data["energy"] = min(100.0, p_data["energy"] + 15.0 * TICK_RATE)
                             # ==========================================
 
                             for conn in self._sockets:
