@@ -100,6 +100,7 @@ class Game:
 
         self.last_shot_time = -10000 # Pacinio - track last shot time for cooldowns
         self.last_landmine_spawn = 0  # Track time for landmine spawning
+        self.landmine_spawn_count = 0  # Counter for synchronized RNG across all clients
 
         self.laser_timers = {}
         self.laser_burn_cooldown = 0 #jam
@@ -164,9 +165,11 @@ class Game:
                 brick = Brick(data_sprite[1],data_sprite[2],data_sprite[3],data_sprite[4])
                 self._bricks.add(brick)
 
-    def find_safe_spawn_location(self):
+    def find_safe_spawn_location(self, spawn_seed: int):
         """Find a location to spawn landmine that doesn't collide with bricks"""
         import random
+        # Seed random with spawn counter so all clients generate same positions
+        random.seed(spawn_seed)
         for _ in range(20):
             x = random.randint(100, self.tile.WIDTH - 100)
             y = random.randint(100, self.tile.HEIGHT - 100)        
@@ -179,6 +182,7 @@ class Game:
             if not collision:
                 return (x, y)
         # Fallback if no safe location found
+        random.seed(spawn_seed)
         return (random.randint(100, self.tile.WIDTH - 100), random.randint(100, self.tile.HEIGHT - 100))
 
 
@@ -307,9 +311,10 @@ class Game:
         # Spawn landmines every 5 seconds
         current_time = pg.time.get_ticks()
         if current_time - self.last_landmine_spawn >= 5000:  
-            spawn_pos = self.find_safe_spawn_location()
+            spawn_pos = self.find_safe_spawn_location(self.landmine_spawn_count)
             landmine = Landmine(spawn_pos[0], spawn_pos[1])
             self._landmines.add(landmine)
+            self.landmine_spawn_count += 1  # Increment for next spawn
             self.last_landmine_spawn = current_time
         
         # Update landmines
@@ -321,9 +326,8 @@ class Game:
                 if landmine.rect.colliderect(player.rect) and landmine.is_active:
                     SOUND_BOOM.play()
                     if self.network:
-                        dmg_packet = Struct.pack_tile({
-                            "type": 97, "x": player.player_number, "y": 50, "w": 0, "h": 0
-                        })
+                        # Send damage packet: type=97, target_id=player_number, damage=25
+                        dmg_packet = bytes([97, player.player_number, 25])
                         self.network.send_move_tcp(dmg_packet)
                     landmine.kill()
                     break
