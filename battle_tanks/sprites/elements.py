@@ -65,7 +65,7 @@ class Bullet(pg.sprite.Sprite):
             self.kill()
 #zmon
 
-class Landmine(pg.sprite.Sprite)
+class Landmine(pg.sprite.Sprite):
     def __init__(self, x, y, explosion_radius=60):
         super().__init__()
         self.x = float(x)

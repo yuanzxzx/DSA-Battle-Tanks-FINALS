@@ -111,7 +111,8 @@ def main():
 
     main_game = pg.Surface((WIDTH,HEIGHT))
     menu = Menu(SCREEN)
-    game = menu.update(main_game)
+    # game = menu.update(main_game) - Pacinio -- update does not exist in menu
+    game = menu.multiplayer_mode(main_game) # Pacinio
     text_damage = TextComponent((WIDTH//2,HEIGHT +30 ),f"Damage: {game.damage} %", color=(168, 0, 0), font_size=40)
     bullets = pg.Surface((WIDTH,36))
 
