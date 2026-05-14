@@ -73,7 +73,8 @@ class Server:
         self.last_landmine_spawn = time.time()
         self.landmine_spawn_count = 0
         self.landmine_positions = []
-        self.landmine_spawn_interval = 5.0
+        self.landmine_spawn_interval = 10.0
+        self.landmine_min_spawn_distance = 200
         self._executor = ThreadPoolExecutor(max_workers=10,thread_name_prefix="CLIENT_RECV")
         self._socket.listen(self._max_players)
 
@@ -117,7 +118,27 @@ class Server:
                     collision = True
                     break
             if not collision:
-                return (x, y)
+                too_close = False
+                for spawn_x, spawn_y in self.landmine_positions:
+                    if math.hypot(spawn_x - x, spawn_y - y) < self.landmine_min_spawn_distance:
+                        too_close = True
+                        break
+                if not too_close:
+                    return (x, y)
+        for _ in range(100):
+            x = rng.randint(100, max(100, width - 100))
+            y = rng.randint(100, max(100, height - 100))
+            test_rect = Rect(x, y, 16, 16)
+            collision = False
+            for brick in Collision.bricks:
+                if test_rect.colliderect(brick.rect):
+                    collision = True
+                    break
+            if collision:
+                continue
+            if any(math.hypot(spawn_x - x, spawn_y - y) < self.landmine_min_spawn_distance for spawn_x, spawn_y in self.landmine_positions):
+                continue
+            return (x, y)
         return (rng.randint(100, max(100, width - 100)), rng.randint(100, max(100, height - 100)))
 
     def _get_position(self,current) -> tuple:
