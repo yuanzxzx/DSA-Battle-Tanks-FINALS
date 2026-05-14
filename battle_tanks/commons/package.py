@@ -6,11 +6,6 @@ from typing import Union, Dict, List, Tuple, Any, Optional
 from battle_tanks.components.collision import Collision
 from battle_tanks.sprites.player import Player
 
-# Define global constants for network buffers and sizes
-BUFFER_SIZE_INIT_PLAYER: int = 4
-BUFFER_SIZE_EVENT: int = 1
-BUFFER_SIZE_NAME: int = 32
-
 # Manage data serialization and deserialization for client-server communication
 class Struct:
     
@@ -21,6 +16,9 @@ class Struct:
     BUFFER_SIZE_EVENT_RESPONSE: int = 11
     BUFFER_SPLIT_MAP: int = 88
     BUFFER_SIZE_LVL_MAP: int = 40
+    BUFFER_SIZE_INIT_PLAYER: int = 4
+    BUFFER_SIZE_EVENT: int = 32  # Increased from 1 to handle multi-byte events (LASER_OFF_EVENT=5, damage packets=3)
+    BUFFER_SIZE_NAME: int = 32
     
     # Pre-define connection status codes to streamline server responses
     OK_MESSAGE: bytes = b'\x01'
