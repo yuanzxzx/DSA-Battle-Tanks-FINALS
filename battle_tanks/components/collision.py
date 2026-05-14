@@ -92,11 +92,9 @@ class Collision:
                     other_player["damage_indicator"] += Player.DAMAGE
 
                     if other_player["damage_indicator"] >= Player.MAX_DAMAGE:
-                        random_index = random.randint(0, len(cls.positions) - 1) if cls.positions else 0
                         other_player["damage_indicator"] = 0
-                        if cls.positions:
-                            other_player["x"] = cls.positions[random_index][0]
-                            other_player["y"] = cls.positions[random_index][1]
+                        respawn_position = cls.get_respawn_position(exclude=(other_player["x"], other_player["y"]))
+                        other_player["x"], other_player["y"] = respawn_position
 
                     packet = Struct.pack_player(None, other_player, Struct.PLAYER_SHOT)
                     packets.append(packet)
@@ -172,6 +170,59 @@ class Collision:
 
         return {}
 
+    @classmethod
+    def _is_safe_spawn_position(cls, position: tuple) -> bool:
+        if not position or len(position) != 2:
+            return False
+
+        x, y = int(position[0]), int(position[1])
+        body = pg.Rect(x, y, Player.SIZE_BODY_RECT[0], Player.SIZE_BODY_RECT[1])
+
+        if x < 0 or y < 0:
+            return False
+        if cls.size_screen[0] and cls.size_screen[1]:
+            if x + body.w > cls.size_screen[0] or y + body.h > cls.size_screen[1]:
+                return False
+
+        for brick in cls.bricks:
+            if body.colliderect(brick.rect):
+                return False
+
+        return True
+
+    @classmethod
+    def _find_random_safe_spawn(cls, attempts: int = 50) -> tuple:
+        if cls.size_screen[0] and cls.size_screen[1]:
+            for _ in range(attempts):
+                x = random.randint(0, cls.size_screen[0] - Player.SIZE_BODY_RECT[0])
+                y = random.randint(0, cls.size_screen[1] - Player.SIZE_BODY_RECT[1])
+                if cls._is_safe_spawn_position((x, y)):
+                    return x, y
+
+        return 323, 677
+
+    @classmethod
+    def get_respawn_position(cls, exclude: tuple = None) -> tuple:
+        """Return a spawn point that is not the same as the excluded location."""
+        if not cls.positions:
+            return cls._find_random_safe_spawn()
+
+        exclude = (int(exclude[0]), int(exclude[1])) if exclude is not None else None
+
+        safe_positions = [pos for pos in cls.positions if cls._is_safe_spawn_position(pos)]
+        if exclude is not None:
+            safe_positions = [pos for pos in safe_positions if pos != exclude]
+
+        if safe_positions:
+            return random.choice(safe_positions)
+
+        # If all map spawn points are invalid, try the non-excluded safe ones first.
+        fallback_positions = [pos for pos in cls.positions if cls._is_safe_spawn_position(pos)]
+        if fallback_positions:
+            return random.choice(fallback_positions)
+
+        return cls._find_random_safe_spawn()
+
 
     @classmethod
     def check_collision_player(cls, player_data: dict, collision_radius: int) -> dict:
@@ -204,11 +255,9 @@ class Collision:
                     other_player["damage_indicator"] += Player.DAMAGE
 
                     if other_player["damage_indicator"] >= Player.MAX_DAMAGE:
-                        random_index = random.randint(0, len(cls.positions) - 1)
                         other_player["damage_indicator"] = 0
-
-                        other_player["x"] = cls.positions[random_index][0]
-                        other_player["y"] = cls.positions[random_index][1]
+                        respawn_position = cls.get_respawn_position(exclude=(other_player["x"], other_player["y"]))
+                        other_player["x"], other_player["y"] = respawn_position
 
                     return {
                             "type":7,
