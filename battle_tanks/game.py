@@ -471,6 +471,19 @@ class Game:
                        angle_cannon=player.angle_cannon)
             dt = 1/60
         for p_id, p in self.players.items():
+            #-Yu (hide completely defeated players)
+            if getattr(p, 'deaths', 0) >= 3:
+                continue
+            #-Yu (hide completely defeated players)
+
+            if p != self.player:
+                dist = math.hypot(self.player.rect.centerx - p.rect.centerx,
+                                  self.player.rect.centery - p.rect.centery)
+                if dist > self.FOV_RADIUS:
+                    continue
+
+            tank_rect = self.camera.apply(p)
+
             # Initialize energy if they don't have it yet
             if not hasattr(p, "energy"):
                 p.energy = 100.0
@@ -507,12 +520,12 @@ class Game:
                     if p.energy > p.max_energy:
                         p.energy = p.max_energy
 
-            if getattr(player, "laser_active", False):
+            if getattr(p, "laser_active", False):
               # import math -- already imported at top, breaks multiplayer if re-imported here -- Pacinio
-                rad_angle = math.radians(-player.angle_cannon - 90)
+                rad_angle = math.radians(-p.angle_cannon - 90)
                 barrel_offset = 20 
                 
-                world_start = (player.rect.centerx, player.rect.centery)
+                world_start = (p.rect.centerx, p.rect.centery)
                 world_max_end = (world_start[0] + 300 * math.cos(rad_angle), world_start[1] + 300 * math.sin(rad_angle))
                 
                 closest_dist = 300
@@ -533,7 +546,7 @@ class Game:
            
             # Dibujar el nombre del jugador
             font = pg.font.Font(None, 24)  # Crear una fuente
-            text_surface = font.render(player.name, True, (255, 255, 255))  # Texto blanco
+            text_surface = font.render(p.name, True, (255, 255, 255))  # Texto blanco
             text_rect = text_surface.get_rect()
             
             # Posicionar el texto encima del tanque
