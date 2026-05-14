@@ -10,12 +10,6 @@ class SpriteBasic(pg.sprite.Sprite):
         self.rect = pg.Rect((x_pos, y_pos), (width, height))
 
 
-    @classmethod
-    def boom(cls):
-        pass
-        # cls.SOUND_BOOM.play()
-
-
     @property
     def data(self):
         return self._data

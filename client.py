@@ -4,14 +4,12 @@ import pygame as pg
 import queue 
 import threading as th
 import math
-from typing import Tuple, List
 
 from battle_tanks.components.text import TextComponent
 from battle_tanks import  ROUTE, game
 from battle_tanks.commons.package import Struct
 from battle_tanks.components import NetworkComponent
 from battle_tanks.menu import Menu
-from battle_tanks.game import GameState
 
 
 # class Collision:
