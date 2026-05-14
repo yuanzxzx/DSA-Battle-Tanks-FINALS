@@ -6,6 +6,7 @@ import os
 import queue
 import logging
 import math
+import random
 from typing import Dict, List
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
@@ -69,6 +70,10 @@ class Server:
         self.positions = {}
 
         self._max_players = Struct.MAX_PLAYERS
+        self.last_landmine_spawn = time.time()
+        self.landmine_spawn_count = 0
+        self.landmine_positions = []
+        self.landmine_spawn_interval = 5.0
         self._executor = ThreadPoolExecutor(max_workers=10,thread_name_prefix="CLIENT_RECV")
         self._socket.listen(self._max_players)
 
@@ -97,6 +102,23 @@ class Server:
             time.sleep(TICK_RATE)
             q.put(b"TICK")
 
+    def _find_safe_landmine_location(self, spawn_seed: int):
+        rng = random.Random(spawn_seed)
+        width, height = Collision.size_screen
+        for _ in range(20):
+            x = rng.randint(100, max(100, width - 100))
+            y = rng.randint(100, max(100, height - 100))
+            test_rect = None
+            from pygame import Rect
+            test_rect = Rect(x, y, 16, 16)
+            collision = False
+            for brick in Collision.bricks:
+                if test_rect.colliderect(brick.rect):
+                    collision = True
+                    break
+            if not collision:
+                return (x, y)
+        return (rng.randint(100, max(100, width - 100)), rng.randint(100, max(100, height - 100)))
 
     def _get_position(self,current) -> tuple:
         if Collision.positions:
@@ -226,8 +248,26 @@ class Server:
 
                     elif data == Struct.LASER_ON_EVENT:
                         player_data["laser_active"] = True
+                        event_packet = Struct.pack_tile({
+                            "type": Struct.LASER_ON_REMOTE,
+                            "x": position,
+                            "y": 0,
+                            "w": 0,
+                            "h": 0
+                        })
+                        for conn in self._sockets:
+                            self._executor.submit(send_data, conn, event_packet)
                     elif data == Struct.LASER_OFF_EVENT:
                         player_data["laser_active"] = False
+                        event_packet = Struct.pack_tile({
+                            "type": Struct.LASER_OFF_REMOTE,
+                            "x": position,
+                            "y": 0,
+                            "w": 0,
+                            "h": 0
+                        })
+                        for conn in self._sockets:
+                            self._executor.submit(send_data, conn, event_packet)
                     elif data == b'\x50':
                         rad_angle = math.radians(-player_data.get("angle_cannon", 0) - 90)
                         start_x, start_y = Collision.calculate_bullet_position(player_data, 0)
@@ -461,6 +501,17 @@ class Server:
                         for data in _game_state:
                             conn_new_player.sendall(data)
 
+                        # Send any active mine spawns that were created before this player joined
+                        for spawn_x, spawn_y in self.landmine_positions:
+                            mine_packet = Struct.pack_tile({
+                                "type": Struct.MINE_SPAWN,
+                                "x": spawn_x,
+                                "y": spawn_y,
+                                "w": 0,
+                                "h": 0
+                            })
+                            conn_new_player.sendall(mine_packet)
+
                         self._data[current] = new_player
                         self._filter_name.append(new_player.get("name"))
                         Collision.add_player(new_player)
@@ -493,11 +544,29 @@ class Server:
                         current_time = time.time()
                         if current_time - self.tick_last_sent >= TICK_RATE * 0.9:
                             self.tick_last_sent = current_time
+
+                            if data == b"TICK":
+                                if current_time - self.last_landmine_spawn >= self.landmine_spawn_interval:
+                                    if self._sockets:
+                                        spawn_x, spawn_y = self._find_safe_landmine_location(self.landmine_spawn_count)
+                                        self.landmine_spawn_count += 1
+                                        self.last_landmine_spawn = current_time
+                                        self.landmine_positions.append((spawn_x, spawn_y))
+                                        mine_event = Struct.pack_tile({
+                                            "type": Struct.MINE_SPAWN,
+                                            "x": spawn_x,
+                                            "y": spawn_y,
+                                            "w": 0,
+                                            "h": 0
+                                        })
+                                        for conn in self._sockets:
+                                            self._executor.submit(send_data, conn, mine_event)
+
                             packets = Collision.update_bullets()
                             for packet in packets:
                                 q.put(packet)
                             for p_data in self._data.values():
-                                if "energy" not in p_data: 
+                                if "energy" not in p_data:
                                     p_data["energy"] = 100.0
                                 
                                 if p_data.get("laser_active"):
@@ -506,7 +575,6 @@ class Server:
                                         p_data["energy"] = 0
                                         p_data["laser_active"] = False 
                                 else:
-
                                     p_data["energy"] = min(100.0, p_data["energy"] + 15.0 * TICK_RATE)
                             for conn in self._sockets:
                                 self._executor.submit(send_data, conn, Struct.pack_players(self._data)) #jam
