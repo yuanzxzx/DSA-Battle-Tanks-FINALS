@@ -32,7 +32,7 @@ LASER = pg.mixer.Sound(ROUTE("assets/sound/laser_sfx.mp3")) # lars
 SOUND_BOOM.set_volume(0.1)
 SHOT.set_volume(0.1)
 SHOTGUN.set_volume(0.3) # lars
-LASER.set_volume(0.1) # lars
+LASER.set_volume(0.3) # lars
 
 playend_end_sound = False # To ensure we only play the victory/defeat sound once
 
@@ -133,7 +133,7 @@ class Game:
 # kca
         self.load()
 
-# lars        
+# lars - start main track music      
         pg.mixer.music.stop() 
         pg.mixer.music.load(ROUTE("assets/sound/main_track.mp3"))
         pg.mixer.music.set_volume(0.3)
