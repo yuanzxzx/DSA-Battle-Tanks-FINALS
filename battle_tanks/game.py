@@ -103,6 +103,7 @@ class Game:
             position = (0,0)
 
         self.player = Player(position, self._player_number, cannon_type=copy.deepcopy(type_guns.get("MEDIUM")), tank_color=tank_color)
+        self.player.name = player_name # Pacinio -- reflects name on menu to in-game ui
         self.players[self._player_number] = self.player
         self.camera = CameraComponent(self.tile.WIDTH, self.tile.HEIGHT, (self.WIDTH, self.HEIGHT))
         self.move = MovementComponent(self.network, self.player)
@@ -544,69 +545,65 @@ class Game:
                 pg.draw.line(self.SCREEN, (255, 50, 50), (start_x, start_y), draw_end, 5)
                 pg.draw.line(self.SCREEN, (255, 255, 255), (start_x, start_y), draw_end, 2) #jam
            
-            # Dibujar el nombre del jugador
-            font = pg.font.Font(None, 24)  # Crear una fuente
-            text_surface = font.render(p.name, True, (255, 255, 255))  # Texto blanco
-            text_rect = text_surface.get_rect()
-            
-            # Posicionar el texto encima del tanque
-            text_rect.centerx = tank_rect.centerx
-            text_rect.bottom = tank_rect.top - 5  # 5 píxeles arriba del tanque
-            
-            # Dibujar el texto
-            self.SCREEN.blit(text_surface, text_rect)
+            if p == self.player: # Pacinio - draw player name and health bar above your own tank
+                # Dibujar el nombre del jugador
+                font = pg.font.Font(None, 24)  # Crear una fuente
+                text_surface = font.render(p.name, True, (255, 255, 255))  # Texto blanco
+                text_rect = text_surface.get_rect()
+                
+                # Posicionar el texto encima del tanque
+                text_rect.centerx = tank_rect.centerx
+                text_rect.bottom = tank_rect.top - 5  # 5 píxeles arriba del tanque
+                
+                # Dibujar el texto
+                self.SCREEN.blit(text_surface, text_rect)
 
-            # Pacinio
-            if p != self.player:
-                continue
-            # Pacinio
+                # Dibujar la barra de vida
+                health_width = 50  # Ancho de la barra de vida
+                health_height = 5  # Alto de la barra de vida
+                health_x = tank_rect.centerx - health_width // 2
+                health_y = text_rect.bottom + 2  # 2 píxeles debajo del nombre
 
-            # Dibujar la barra de vida
-            health_width = 50  # Ancho de la barra de vida
-            health_height = 5  # Alto de la barra de vida
-            health_x = tank_rect.centerx - health_width // 2
-            health_y = text_rect.bottom + 2  # 2 píxeles debajo del nombre
-
-            # Barra de vida base (gris)
-            pg.draw.rect(self.SCREEN, (100, 100, 100), 
-                        (health_x, health_y, health_width, health_height))
-            
-            # Calcular el ancho de la barra de vida actual
-            health_percentage = 1 - (p.damage / Player.MAX_DAMAGE) # Pacinio -- player.damage to p.damage
-            current_health_width = int(health_width * health_percentage)
-            
-            # Barra de vida actual (roja)
-            pg.draw.rect(self.SCREEN, (255, 0, 0), 
-                        (health_x, health_y, current_health_width, health_height))
-            
-            energy_y = health_y + health_height + 2 # Places it flush beneath the health bar
-            energy = getattr(p, "energy", 100.0) # Pacinio -- player to p
-            max_energy = getattr(p, "max_energy", 100.0) # Pacinio -- player to p
-            
-            # Draw background track (Dark Blue)
-            pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
-            
-            # Draw foreground active energy (Bright Cyan)
-            current_energy_width = int(health_width * (energy / max_energy))
-            if current_energy_width > 0:
-                pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height))
-            #-Yu (heart UI life indicator)
-
-            # Indicador de vidas (3 corazones arriba del nombre)
-            deaths = getattr(p, 'deaths', 0) # Pacinio -- player to p
-            lives_left = max(0, 3 - deaths)
-            lives_width = 12 * 3 + 4 * 2
-            lives_x = tank_rect.centerx - lives_width // 2
-            lives_y = text_rect.top - 14
-
-            for i in range(3):
-                if self.heart_full_img and self.heart_empty_img:
-                    img = self.heart_full_img if i < lives_left else self.heart_empty_img
-                    self.SCREEN.blit(img, (lives_x + i * 16, lives_y))
-                else:
-                    color = (0, 255, 0) if i < lives_left else (100, 100, 100)
-                    pg.draw.circle(self.SCREEN, color, (lives_x + i * 16 + 6, lives_y + 6), 5)
+                # Barra de vida base (gris)
+                pg.draw.rect(self.SCREEN, (100, 100, 100), 
+                            (health_x, health_y, health_width, health_height))
+                
+                # Calcular el ancho de la barra de vida actual
+                health_percentage = 1 - (p.damage / Player.MAX_DAMAGE) # Pacinio -- player.damage to p.damage
+                current_health_width = int(health_width * health_percentage)
+                
+                # Barra de vida actual (roja)
+                pg.draw.rect(self.SCREEN, (255, 0, 0), 
+                            (health_x, health_y, current_health_width, health_height))
+                
+                energy_y = health_y + health_height + 2 # Places it flush beneath the health bar
+                energy = getattr(p, "energy", 100.0) # Pacino -- player to p
+                max_energy = getattr(p, "max_energy", 100.0) # Pacino -- player to p
+                
+                # Draw background track (Dark Blue)
+                pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
+                
+                # Draw foreground active energy (Bright Cyan)
+                current_energy_width = int(health_width * (energy / max_energy))
+                if current_energy_width > 0:
+                    pg.draw.rect(self.SCREEN, (0, 255, 255), (health_x, energy_y, current_energy_width, health_height))
                 #-Yu (heart UI life indicator)
+
+                # Indicador de vidas (3 corazones arriba del nombre)
+                deaths = getattr(p, 'deaths', 0) # Pacino -- player to p
+                lives_left = max(0, 3 - deaths)
+                lives_width = 12 * 3 + 4 * 2
+                lives_x = tank_rect.centerx - lives_width // 2
+                lives_y = text_rect.top - 14
+
+                for i in range(3):
+                    if self.heart_full_img and self.heart_empty_img:
+                        img = self.heart_full_img if i < lives_left else self.heart_empty_img
+                        self.SCREEN.blit(img, (lives_x + i * 16, lives_y))
+                    else:
+                        color = (0, 255, 0) if i < lives_left else (100, 100, 100)
+                        pg.draw.circle(self.SCREEN, color, (lives_x + i * 16 + 6, lives_y + 6), 5)
+                    #-Yu (heart UI life indicator)
 
         for brick in self._bricks:
             self.SCREEN.blit(brick.image,self.camera.apply(brick))
