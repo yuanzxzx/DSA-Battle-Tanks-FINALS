@@ -122,8 +122,6 @@ class DatabaseManager:
             # else:
             cls._db = BasicDb(data.get("database_name"))
 
-
-
     @classmethod
     def get(cls) -> BasicDb:
         if cls._db is None:
