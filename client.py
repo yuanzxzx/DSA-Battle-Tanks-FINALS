@@ -144,8 +144,9 @@ def main():
             elif event.type == pg.KEYDOWN:
                 key = event.key
                 if key == pg.K_l and game.state != 2:
-                    game.player.laser_active = True
-                    game.network.send_move_tcp(Struct.LASER_ON_EVENT)
+                    if getattr(game.player, "energy", 0) >= 100.0:
+                        game.player.laser_active = True
+                        game.network.send_move_tcp(Struct.LASER_ON_EVENT) #jam lock laser event
                 #-Yu (listen for K key to fire shotgun)
                 elif key == pg.K_k and game.state != 2:
                     current_time = pg.time.get_ticks()
