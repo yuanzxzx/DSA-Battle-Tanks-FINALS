@@ -6,13 +6,10 @@ from battle_tanks.commons.package import Struct
 
 
 class MovementComponent:
-    """
-        MOVES GAME COMPONENT
-    """
+
     def __init__(self, network: Union[NetworkComponent,None], player:Player):
         self.network = network
         self.player = player
-
 
     def keys(self):
         key = pg.key.get_pressed()
@@ -44,6 +41,3 @@ class MovementComponent:
 
         if self.network and len(actions) > 0:
             self.network.send_keys(actions)
-
-
-
