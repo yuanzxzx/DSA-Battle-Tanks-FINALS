@@ -556,6 +556,11 @@ class Game:
             # Dibujar el texto
             self.SCREEN.blit(text_surface, text_rect)
 
+            # Pacinio
+            if p != self.player:
+                continue
+            # Pacinio
+
             # Dibujar la barra de vida
             health_width = 50  # Ancho de la barra de vida
             health_height = 5  # Alto de la barra de vida
@@ -567,7 +572,7 @@ class Game:
                         (health_x, health_y, health_width, health_height))
             
             # Calcular el ancho de la barra de vida actual
-            health_percentage = 1 - (player.damage / Player.MAX_DAMAGE)
+            health_percentage = 1 - (p.damage / Player.MAX_DAMAGE) # Pacinio -- player.damage to p.damage
             current_health_width = int(health_width * health_percentage)
             
             # Barra de vida actual (roja)
@@ -575,8 +580,8 @@ class Game:
                         (health_x, health_y, current_health_width, health_height))
             
             energy_y = health_y + health_height + 2 # Places it flush beneath the health bar
-            energy = getattr(player, "energy", 100.0)
-            max_energy = getattr(player, "max_energy", 100.0)
+            energy = getattr(p, "energy", 100.0) # Pacinio -- player to p
+            max_energy = getattr(p, "max_energy", 100.0) # Pacinio -- player to p
             
             # Draw background track (Dark Blue)
             pg.draw.rect(self.SCREEN, (0, 0, 100), (health_x, energy_y, health_width, health_height))
@@ -588,7 +593,7 @@ class Game:
             #-Yu (heart UI life indicator)
 
             # Indicador de vidas (3 corazones arriba del nombre)
-            deaths = getattr(player, 'deaths', 0)
+            deaths = getattr(p, 'deaths', 0) # Pacinio -- player to p
             lives_left = max(0, 3 - deaths)
             lives_width = 12 * 3 + 4 * 2
             lives_x = tank_rect.centerx - lives_width // 2
