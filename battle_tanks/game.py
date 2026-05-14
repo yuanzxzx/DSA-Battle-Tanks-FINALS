@@ -457,7 +457,7 @@ class Game:
                     if self.network:
                         try:
                             # Send as bytes: [type][target_id][damage]
-                            dmg_packet = bytes([97, int(closest_target), 10])
+                            dmg_packet = bytes([97, int(closest_target), 5])
                             self.network.send_move_tcp(dmg_packet)
                         except Exception: 
                             pass
