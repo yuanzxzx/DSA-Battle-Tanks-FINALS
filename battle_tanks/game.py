@@ -101,6 +101,8 @@ class Game:
         self.last_shot_time = -10000 # Pacinio - track last shot time for cooldowns
         self.last_landmine_spawn = 0  # Track time for landmine spawning
         self.landmine_spawn_count = 0  # Counter for synchronized RNG across all clients
+        self.landmine_spawn_interval = 10000  # milliseconds between landmine spawns
+        self.landmine_min_spawn_distance = 200  # minimum distance between landmines
 
         self.laser_timers = {}
         self.laser_burn_cooldown = 0 #jam
@@ -179,6 +181,12 @@ class Game:
                 if test_rect.colliderect(brick.rect):
                     collision = True
                     break
+            if not collision:
+                for landmine in self._landmines:
+                    dist = math.hypot(landmine.rect.centerx - x, landmine.rect.centery - y)
+                    if dist < self.landmine_min_spawn_distance:
+                        collision = True
+                        break
             if not collision:
                 return (x, y)
         # Fallback if no safe location found
@@ -308,10 +316,10 @@ class Game:
                     bullet.kill()
                     break
         
-        # Spawn landmines every 5 seconds only in local mode.
+        # Spawn landmines every interval only in local mode.
         if not self.network:
             current_time = pg.time.get_ticks()
-            if current_time - self.last_landmine_spawn >= 5000:  
+            if current_time - self.last_landmine_spawn >= self.landmine_spawn_interval:
                 spawn_pos = self.find_safe_spawn_location(self.landmine_spawn_count)
                 landmine = Landmine(spawn_pos[0], spawn_pos[1])
                 self._landmines.add(landmine)
