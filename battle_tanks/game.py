@@ -6,6 +6,7 @@ from typing import Tuple, Dict, Union, List
 import pygame as pg
 import math
 import copy
+import random
 
 from battle_tanks.commons.package import Struct, Collision
 from battle_tanks.components.movement import MovementComponent
@@ -61,6 +62,12 @@ class Game:
         self.network = NetworkComponent(addr, player_name, tank_color) if addr is not None else None
         self._player_number = self.network.player_number if addr is not None else 0
         self.positions = {}
+
+        # Pacinio - particle effects lists
+        self.debris_particles = []
+        self.laser_hit_effects = []
+        self.laser_hit_point = None
+        # Pacinio - particle effects lists
 
 
         pg.display.set_caption(f"Battle Tank - Client: {self._player_number} - User: {player_name}")
@@ -392,6 +399,7 @@ class Game:
                         self._bricks.remove(sprite_brick)
                         if sprite_brick in Collision.bricks: sprite_brick.remove(Collision.bricks)
                         SOUND_BOOM.play()
+                        self._spawn_debris(brick_rect.centerx, brick_rect.centery, count=14) # Pacinio - spawn debris particles when brick breaks
               #          self.camera.shake() #zmon
                         sprite_brick.kill()
 
@@ -415,12 +423,18 @@ class Game:
                         closest_dist = dist
                         closest_brick = brick
                         
+                        # Pacinio
+                        hit_x, hit_y = clip[0]
+                        self._spawn_laser_hit(hit_x, hit_y)
+                        # Pacinio
+
             if closest_brick:
                 dt = 1/60 
                 brick_id = f"brick_{closest_brick.rect.x}_{closest_brick.rect.y}"
                 self.laser_timers[brick_id] = self.laser_timers.get(brick_id, 0) + dt
 
                 if self.laser_timers[brick_id] >= 1.0:
+                    self._update_particles(1/60) # Pacinio
                     if self.network:
                         try:
                             self.network.socket_tcp.sendall(b'\x50')
@@ -446,7 +460,45 @@ class Game:
         if getattr(self, "laser_burn_cooldown", 0) > 0:
             self.laser_burn_cooldown -= 1
 
+        self._update_particles(1/60)
         self.camera.update(self.player) #jam
+
+    # Pacinio
+    def _spawn_debris(self, x, y, count=12):
+        for _ in range(count):
+            self.debris_particles.append({
+                "pos": [x + random.uniform(-16, 16), y + random.uniform(-16, 16)],
+                "vel": [random.uniform(-3, 3), random.uniform(-5, -1)],
+                "life": random.uniform(0.35, 0.8),
+                "radius": random.randint(2, 4),
+                "color": (210, 180, 140)
+            })
+
+    def _spawn_laser_hit(self, x, y):
+        self.laser_hit_point = (x, y)
+        self.laser_hit_effects.append({
+            "pos": [x, y],
+            "life": 0.2,
+            "radius": 10,
+            "alpha": 180
+        })
+
+    def _update_particles(self, dt):
+        for particle in list(self.debris_particles):
+            particle["pos"][0] += particle["vel"][0]
+            particle["pos"][1] += particle["vel"][1]
+            particle["vel"][1] += 0.18
+            particle["life"] -= dt
+            if particle["life"] <= 0:
+                self.debris_particles.remove(particle)
+
+        for effect in list(self.laser_hit_effects):
+            effect["life"] -= dt
+            effect["alpha"] = int(180 * max(0, effect["life"] / 0.2))
+            effect["radius"] += 1
+            if effect["life"] <= 0:
+                self.laser_hit_effects.remove(effect)
+    # Pacinio
 
 
     def draw(self, main_screen: pg.Surface):
@@ -611,6 +663,22 @@ class Game:
         for bullet in self._bullets:
             self.SCREEN.blit(bullet.image, self.camera.apply(bullet))
             #zmon
+
+        # Pacinio
+        for particle in self.debris_particles:
+            color = particle["color"]
+            alpha = int(255 * max(0, particle["life"] / 0.8))
+            surf = pg.Surface((particle["radius"]*2, particle["radius"]*2), pg.SRCALPHA)
+            pg.draw.circle(surf, (*color, alpha), (particle["radius"], particle["radius"]), particle["radius"])
+            self.SCREEN.blit(surf, (particle["pos"][0] - particle["radius"], particle["pos"][1] - particle["radius"]))
+
+        if self.laser_hit_point:
+            hit_screen = self.camera.apply_rect(pg.Rect(self.laser_hit_point[0], self.laser_hit_point[1], 1, 1))
+            for effect in self.laser_hit_effects:
+                glow = pg.Surface((effect["radius"]*2, effect["radius"]*2), pg.SRCALPHA)
+                pg.draw.circle(glow, (255, 120, 0, effect["alpha"]), (effect["radius"], effect["radius"]), effect["radius"], 2)
+                self.SCREEN.blit(glow, (hit_screen.centerx - effect["radius"], hit_screen.centery - effect["radius"]))
+        # Pacinio
         
         #landmines
         for landmine in self._landmines:
