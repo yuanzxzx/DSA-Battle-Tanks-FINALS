@@ -1,4 +1,4 @@
 """ init battle_tanks """
 
 from .player import Player
-from .elements import Brick, Block, Bullet
+from .elements import Brick, Block, Bullet, Landmine
