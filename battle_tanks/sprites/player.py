@@ -14,7 +14,7 @@ class Player(Cannon): # Player class
     ANGLE = 5 # Angle of the tank
     ANGLE_RIGHT = 1 # Angle to the right
     ANGLE_LEFT = -1 # Angle to the left
-    SIZE_BODY_RECT = (32,32) # Size of the tank body
+    SIZE_BODY_RECT = (30,30) # Size of the tank body
     DAMAGE =  33.34 #YU - Damage changed into 33.34 from 10 (to kill enemy in 3 shots)
     MAX_DAMAGE = 100 # Maximum damage of the tank
     TELESCOPIC_SIGH = pg.image.load(os.path.join(os.path.abspath("."), "assets/images/telescopic_sight.png")) # Load telescopic sight image
