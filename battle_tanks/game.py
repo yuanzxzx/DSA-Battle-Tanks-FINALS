@@ -336,7 +336,7 @@ class Game:
                     SOUND_BOOM.play()
                     if self.network:
                         # Send damage packet: type=97, target_id=player_number, damage=25
-                        dmg_packet = bytes([97, player.player_number, 25])
+                        dmg_packet = bytes([97, player.player_number, 50])
                         self.network.send_move_tcp(dmg_packet)
                     landmine.kill()
                     break
